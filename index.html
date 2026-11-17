@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Nelayan Nusantara V4</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#04060f;
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;user-select:none;color:#dbeafe}
+  #game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+  /* ---------- HUD ---------- */
+  #hud{position:absolute;top:0;left:0;right:0;padding:10px 8px;display:flex;gap:6px;
+    flex-wrap:wrap;pointer-events:none;z-index:10;justify-content:center}
+  .pill{background:rgba(10,18,35,.75);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(100,200,255,.3);border-radius:999px;padding:6px 12px;
+    font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;
+    box-shadow:0 4px 15px rgba(0,0,0,.4);white-space:nowrap;transition:.25s}
+  .pill b{color:#fff;font-weight:800}
+  .pill.warn{border-color:rgba(255,90,90,.6);color:#ffb3b3;background:rgba(50,10,10,.8)}
+
+  /* ---------- BUTTONS ---------- */
+  #actions{position:absolute;right:10px;bottom:10px;display:flex;gap:6px;z-index:20;flex-wrap:wrap;justify-content:flex-end;max-width:95vw}
+  .btn{background:linear-gradient(160deg,rgba(30,45,80,.95),rgba(14,22,44,.95));
+    border:1px solid rgba(120,180,255,.4);color:#dbeafe;font-weight:800;font-size:12px;
+    padding:10px 14px;border-radius:12px;cursor:pointer;font-family:inherit;
+    box-shadow:0 4px 15px rgba(0,0,0,.5);transition:.16s;backdrop-filter:blur(8px)}
+  .btn:hover{border-color:rgba(150,210,255,.9);transform:translateY(-2px);box-shadow:0 6px 20px rgba(80,150,255,.2)}
+  .btn:active{transform:translateY(0) scale(.97)}
+  .btn-main{background:linear-gradient(160deg,#22c55e,#15803d);border-color:rgba(110,255,190,.6);min-width:95px}
+  .btn-main.reel{background:linear-gradient(160deg,#f59e0b,#b45309);border-color:rgba(255,190,110,.7)}
+  .btn-main:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .btn-gear{background:rgba(30,45,80,.95);padding:10px 12px;font-size:14px}
+
+  /* ---------- TOAST ---------- */
+  #toast{position:absolute;top:15%;left:50%;transform:translateX(-50%) translateY(-14px);
+    background:rgba(8,14,30,.9);backdrop-filter:blur(14px);border:1px solid rgba(120,180,255,.4);
+    border-radius:16px;padding:12px 20px;text-align:center;pointer-events:none;z-index:60;
+    opacity:0;transition:opacity .45s,transform .45s;box-shadow:0 12px 44px rgba(0,0,0,.7);
+    max-width:90vw;width:max-content}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast .t-title{font-size:18px;font-weight:800;letter-spacing:.4px;margin-bottom:2px;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+  #toast .t-desc{font-size:12px;color:#9fb4d4;margin-bottom:4px;font-weight:600}
+  #toast .t-eff{font-size:12px;font-weight:800}
+  .good{color:#4ade80}.bad{color:#ff6b6b}.neutral{color:#9fb4d4}
+
+  /* ---------- RESULT CARD ---------- */
+  #result{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
+    background:rgba(8,14,30,.95);backdrop-filter:blur(16px);border-radius:20px;
+    padding:18px 28px;text-align:center;pointer-events:none;z-index:55;opacity:0;
+    transition:opacity .3s,transform .3s;box-shadow:0 16px 60px rgba(0,0,0,.8);
+    border:1px solid rgba(255,255,255,.1);width:max-content;max-width:90vw}
+  #result.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #result .r-rar{font-size:11px;font-weight:800;letter-spacing:2px;margin-bottom:4px}
+  #result .r-name{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;text-shadow:0 2px 15px rgba(255,255,255,.2)}
+  #result .r-stats{font-size:13px;color:#9fb4d4;margin-bottom:6px;font-weight:600}
+  #result .r-price{font-size:16px;font-weight:800;color:#ffd76b}
+
+  /* ---------- MODAL ---------- */
+  .modal{position:absolute;inset:0;background:rgba(3,6,16,.85);backdrop-filter:blur(8px);
+    display:flex;align-items:center;justify-content:center;padding:12px;z-index:70}
+  .modal.hidden{display:none}
+  
+  .panel{width:min(960px,100%);max-height:92vh;overflow-y:auto;
+    background:linear-gradient(160deg,rgba(18,26,48,.98),rgba(9,13,26,.98));
+    border:1px solid rgba(120,180,255,.3);border-radius:20px;padding:16px 16px;
+    padding-bottom:80px; box-shadow:0 24px 80px rgba(0,0,0,.9)}
+  .panel::-webkit-scrollbar{width:6px}
+  .panel::-webkit-scrollbar-thumb{background:rgba(120,180,255,.4);border-radius:4px}
+  .panel h2{font-size:18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;color:#fff}
+  
+  .close-x{background:rgba(255,90,90,.15);border:1px solid rgba(255,90,90,.4);color:#ff9a9a;
+    border-radius:10px;padding:6px 12px;cursor:pointer;font-weight:800;font-size:12px;font-family:inherit;transition:.2s}
+  .close-x:hover{background:rgba(255,90,90,.3);transform:scale(1.05)}
+
+  /* FLOATING CLOSE BUTTON */
+  .floating-close {
+    position: absolute; bottom: 20px; right: 20px; width: 50px; height: 50px;
+    border-radius: 50%; background: rgba(239, 68, 68, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.3); color: white; font-size: 22px;
+    font-weight: bold; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255,255,255,0.2);
+    z-index: 100; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .floating-close:hover { transform: scale(1.1) rotate(90deg); background: rgba(255, 60, 60, 1); }
+  .floating-close:active { transform: scale(0.95); }
+
+  /* TABS */
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{background:rgba(255,255,255,.05);border:1px solid rgba(120,180,255,.2);
+    border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;color:#8ba3c4;
+    cursor:pointer;transition:.2s;font-family:inherit}
+  .tab.active{background:rgba(60,140,255,.25);border-color:rgba(100,200,255,.6);color:#fff;box-shadow:0 4px 15px rgba(60,140,255,.2)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .card{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    border:1px solid rgba(120,180,255,.15);border-radius:12px;padding:10px 12px;transition:.16s;position:relative;overflow:hidden}
+  .card:hover{border-color:rgba(120,180,255,.4);background:rgba(255,255,255,.09);transform:translateY(-2px)}
+  .card .c-top{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px}
+  .card .c-name{font-weight:800;font-size:13px;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5)}
+  .card .c-sub{font-size:11px;color:#9fb4d4;line-height:1.4;margin-bottom:8px}
+  .card .c-act{display:flex;gap:4px}
+  .mini{flex:1;background:rgba(80,160,255,.15);border:1px solid rgba(120,180,255,.3);
+    color:#cfe4ff;border-radius:8px;padding:6px 2px;font-size:11px;font-weight:800;
+    cursor:pointer;font-family:inherit;transition:.15s}
+  .mini:hover{background:rgba(80,160,255,.3);color:#fff}
+  .mini:disabled{opacity:.3;cursor:not-allowed}
+  .mini.sell{background:rgba(255,190,80,.15);border-color:rgba(255,190,80,.4);color:#ffd98a}
+  .mini.sell:hover{background:rgba(255,190,80,.3)}
+  .mini.buy{background:rgba(80,255,170,.15);border-color:rgba(80,255,170,.4);color:#8affc8}
+  .mini.buy:hover{background:rgba(80,255,170,.3)}
+  .tag{font-size:9px;font-weight:800;padding:2px 6px;border-radius:99px;letter-spacing:.5px;white-space:nowrap}
+
+  /* ALBUM GRID */
+  .album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+  .album-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;padding:8px;text-align:center;transition:.2s}
+  .album-card:hover{background:rgba(255,255,255,.08);border-color:rgba(120,180,255,.3);transform:scale(1.03)}
+  .album-card .a-icon{font-size:24px;margin-bottom:4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+  .album-card .a-name{font-size:11px;font-weight:800;color:#fff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .album-card .a-count{font-size:10px;font-weight:700;color:#4ade80}
+  .album-card.locked{opacity:.5;filter:grayscale(1)}
+  .album-card.locked .a-name{color:#5f7391}
+
+  .empty{text-align:center;color:#5f7391;font-size:12px;padding:20px 0;font-style:italic;font-weight:600}
+
+  /* LOGIN & TUTORIAL MODAL */
+  #loginModal, #tutorialModal {z-index:999;background:#04060f}
+  .center-box{background:rgba(18,26,48,.98);border:1px solid rgba(120,180,255,.4);border-radius:20px;
+    padding:24px 20px;text-align:center;width:90%;max-width:350px;box-shadow:0 20px 60px rgba(0,0,0,.8)}
+  .center-box h1{font-size:22px;margin-bottom:6px;color:#fff;text-shadow:0 2px 10px rgba(100,200,255,.4)}
+  .center-box p{font-size:12px;color:#9fb4d4;margin-bottom:16px}
+  .center-box input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(120,180,255,.3);
+    background:rgba(0,0,0,.3);color:#fff;font-size:13px;font-weight:600;margin-bottom:8px;outline:none;font-family:inherit;text-align:center}
+  .center-box input:focus{border-color:#4ade80}
+  .center-box button{width:100%;padding:10px;border-radius:8px;border:none;
+    background:linear-gradient(160deg,#22c55e,#15803d);color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:.2s}
+  .center-box button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(34,197,94,.4)}
+  
+  .tutorial-content{text-align:left;font-size:12.5px;line-height:1.6;color:#cbd5e1;margin-bottom:16px;max-height:50vh;overflow-y:auto;padding-right:8px}
+  .tutorial-content h3{color:#60a5fa;margin-top:10px;margin-bottom:4px;font-size:13px}
+  .tutorial-content b{color:#fff}
+
+  /* SETTINGS FORM */
+  .setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px;font-weight:700;color:#cbd5e1}
+  .setting-row input[type="range"]{width:50%;accent-color:#22c55e}
+
+  #loading{position:fixed;inset:0;background:#04060f;display:flex;align-items:center;justify-content:center;color:#4ade80;font-weight:800;z-index:1000;font-size:16px;letter-spacing:2px}
+</style>
+</head>
+<body>
+
+<div id="loading">MEMUAT GAME...</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal" id="loginModal" style="display:none">
+  <div class="center-box">
+    <h1>🎣 Nelayan Nusantara</h1>
+    <p>Masuk atau buat akun baru</p>
+    <input type="text" id="loginUser" placeholder="Username (Unik)" maxlength="15" autocomplete="off">
+    <input type="password" id="loginPass" placeholder="Password" maxlength="20" autocomplete="off">
+    <button id="btnLogin">Masuk / Daftar 🚀</button>
+  </div>
+</div>
+
+<!-- TUTORIAL MODAL -->
+<div class="modal hidden" id="tutorialModal">
+  <div class="center-box" style="max-width:450px">
+    <h1>📖 Panduan Mancing</h1>
+    <div class="tutorial-content">
+      <p>Selamat datang di Nelayan Nusantara! Ini panduan singkatnya:</p>
+      <h3>1. Casting & Reeling</h3>
+      <p>Tekan tombol <b>Cast</b> untuk melempar pancing. Tunggu sampai ada tanda <b>❗</b>, lalu tekan <b>TARIK</b>! Setelah itu, indikator kuning akan bergerak. Tekan tombol <b>STOP</b> saat indikator berada di <b>Zona Hijau</b> untuk menangkap ikan.</p>
+      <h3>2. Waktu & Cuaca</h3>
+      <p>Waktu berjalan dari pagi hingga dini hari. Setiap waktu dan cuaca (hujan, cerah, badai) mempengaruhi persentase <b>Luck</b> dan jenis ikan yang muncul. Perhatikan baik-baik!</p>
+      <h3>3. Jual & Upgrade</h3>
+      <p>Ikan yang ditangkap masuk ke Tas. Buka menu <b>Toko</b> untuk menjual ikan, membeli umpan, dan mengupgrade Joran/Perahu. Semakin tinggi Luck, semakin besar peluang dapat Grade S atau Ikan Legendaris!</p>
+      <h3>4. Album (Fishpedia)</h3>
+      <p>Koleksi semua 300+ spesies ikan di menu <b>Album</b>. Ikan yang sudah pernah ditangkap akan terbuka di album.</p>
+    </div>
+    <button id="btnCloseTutorial">Mengerti, Siap Mancing! 🎣</button>
+  </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="pill" id="pillCoins">🪙 <b>100</b></div>
+  <div class="pill" id="pillTime">🌅 <b>Pagi</b></div>
+  <div class="pill" id="pillWeather">☀️ <b>Cerah</b></div>
+  <div class="pill" id="pillRod">🎣 <b>Joran Kayu</b></div>
+  <div class="pill" id="pillBait">🪱 <b>Cacing ×10</b></div>
+  <div class="pill" id="pillBoat">⛵ <b>100%</b></div>
+</div>
+
+<div id="actions">
+  <button class="btn btn-main" id="btnCast">🎣 Cast</button>
+  <button class="btn" id="btnAlbum">📖 Album</button>
+  <button class="btn" id="btnShop">🛒 Toko</button>
+  <button class="btn" id="btnBag">🎒 Tas</button>
+  <button class="btn btn-gear" id="btnSettings">⚙️</button>
+</div>
+
+<div id="toast">
+  <div class="t-title"></div>
+  <div class="t-desc"></div>
+  <div class="t-eff"></div>
+</div>
+
+<div id="result">
+  <div class="r-rar"></div>
+  <div class="r-name"></div>
+  <div class="r-stats"></div>
+  <div class="r-price"></div>
+</div>
+
+<!-- SHOP MODAL -->
+<div class="modal hidden" id="shopModal">
+  <div class="panel">
+    <h2><span>🛒 Toko Nelayan</span><button class="close-x" data-close="shopModal">Tutup ✕</button></h2>
+    <div class="tabs">
+      <button class="tab active" onclick="switchShopTab('bait')">🪱 Umpan</button>
+      <button class="tab" onclick="switchShopTab('rod')">🎣 Joran</button>
+      <button class="tab" onclick="switchShopTab('boat')">⛵ Perahu</button>
+      <button class="tab" onclick="switchShopTab('bag')">🎒 Tas</button>
+      <button class="tab" onclick="switchShopTab('sell')">💰 Jual</button>
+    </div>
+    <div id="shopBody"></div>
+  </div>
+  <button class="floating-close" data-close="shopModal" title="Kembali">✕</button>
+</div>
+
+<!-- BAG MODAL -->
+<div class="modal hidden" id="bagModal">
+  <div class="panel">
+    <h2><span>🎒 Tas Ikan</span><button class="close-x" data-close="bagModal">Tutup ✕</button></h2>
+    <div id="bagBody"></div>
+  </div>
+  <button class="floating-close" data-close="bagModal" title="Kembali">✕</button>
+</div>
+
+<!-- ALBUM MODAL -->
+<div class="modal hidden" id="albumModal">
+  <div class="panel">
+    <h2><span>📖 Fishpedia (Album)</span><button class="close-x" data-close="albumModal">Tutup ✕</button></h2>
+    <div id="albumStats" style="font-size:12px;color:#9fb4d4;margin-bottom:10px;font-weight:600">
+      Total Spesies: <b>0 / 0</b>
+    </div>
+    <div id="albumBody" class="album-grid"></div>
+  </div>
+  <button class="floating-close" data-close="albumModal" title="Kembali">✕</button>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal hidden" id="settingsModal">
+  <div class="panel" style="max-width:400px; padding-bottom:20px">
+    <h2><span>⚙️ Setelan</span><button class="close-x" data-close="settingsModal">Tutup ✕</button></h2>
+    <div style="margin-bottom:16px">
+      <div class="setting-row">
+        <span>🎵 Backsound</span>
+        <input type="range" id="volBgm" min="0" max="100" value="50">
+      </div>
+      <div class="setting-row">
+        <span>🔊 Efek Suara (SFX)</span>
+        <input type="range" id="volSfx" min="0" max="100" value="50">
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,.1)">
+      <p style="font-size:12px;color:#9fb4d4;margin-bottom:8px">Akun: <b id="setUsername" style="color:#fff">Player</b></p>
+      <button class="btn" style="width:100%;background:rgba(255,90,90,.2);border-color:rgba(255,90,90,.5);color:#ff9a9a" id="btnLogout">Keluar Akun (Logout)</button>
+    </div>
+  </div>
+  <button class="floating-close" data-close="settingsModal" title="Kembali">✕</button>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════
+   UTIL
+═══════════════════════════════════════════════════════════ */
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const randInt=(a,b)=>Math.floor(rand(a,b+1));
+const rgb=c=>`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+const lerpC=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rr(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+/* ═══════════════════════════════════════════════════════════
+   AUDIO SYSTEM & BACKGROUND BUG FIX
+═══════════════════════════════════════════════════════════ */
+let actx=null;
+let masterBgmGain=null;
+let masterSfxGain=null;
+let bgmInterval=null;
+let isAudioStarted=false;
+let bgmVol = 0.5;
+let sfxVol = 0.5;
+
+function initAudio() {
+  if (isAudioStarted) return;
+  try {
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      masterBgmGain = actx.createGain();
+      masterBgmGain.gain.value = bgmVol;
+      masterBgmGain.connect(actx.destination);
+
+      masterSfxGain = actx.createGain();
+      masterSfxGain.gain.value = sfxVol;
+      masterSfxGain.connect(actx.destination);
+    }
+    if (actx.state === 'suspended') actx.resume();
+    isAudioStarted = true;
+    startBGM();
+  } catch(e) {}
+}
+
+function beep(freq, dur=0.15, type='sine', vol=0.08){
+  try{
+    if(!actx || actx.state === 'suspended') return;
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type=type; 
+    o.frequency.setValueAtTime(freq,actx.currentTime);
+    g.gain.setValueAtTime(0,actx.currentTime);
+    g.gain.linearRampToValueAtTime(vol,actx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
+    o.connect(g); g.connect(masterSfxGain);
+    o.start(); o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+
+const bgmChords = [
+  [261.63, 329.63, 392.00, 493.88], // Cmaj7
+  [220.00, 261.63, 329.63, 392.00], // Am7
+  [174.61, 220.00, 261.63, 329.63], // Fmaj7
+  [196.00, 246.94, 293.66, 349.23]  // G7
+];
+let chordIdx = 0;
+let noteIdx = 0;
+
+function startBGM() {
+  if (bgmInterval) clearInterval(bgmInterval);
+  bgmInterval = setInterval(() => {
+    if (!actx || actx.state === 'suspended' || uiOpen || document.hidden) return;
+    const chord = bgmChords[chordIdx];
+    const freq = chord[noteIdx];
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(freq, actx.currentTime);
+    g.gain.setValueAtTime(0, actx.currentTime);
+    g.gain.linearRampToValueAtTime(0.04, actx.currentTime + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.8);
+    o.connect(g); g.connect(masterBgmGain);
+    o.start(); o.stop(actx.currentTime + 0.8);
+
+    noteIdx++;
+    if (noteIdx >= 4) { noteIdx = 0; chordIdx = (chordIdx + 1) % bgmChords.length; }
+  }, 450);
+}
+
+function stopBGM() {
+  if (bgmInterval) clearInterval(bgmInterval);
+  if (actx && actx.state === 'running') {
+    actx.suspend();
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopBGM();
+  } else {
+    if (actx && isAudioStarted) {
+      actx.resume();
+      startBGM();
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   DATA GAME
+═══════════════════════════════════════════════════════════ */
+const RARITY={
+  common:    {label:'UMUM',         color:'#9aa8b8', ppk:18,    wr:[0.10,1.20],  base:100,  icon:'🐟' },
+  uncommon:  {label:'TIDAK UMUM',   color:'#4ade80', ppk:40,    wr:[0.20,2.50],  base:40,   icon:'🐠' },
+  rare:      {label:'LANGKA',       color:'#38bdf8', ppk:90,    wr:[0.50,5.00],  base:14,   icon:'🐡' },
+  epic:      {label:'EPIK',         color:'#a78bfa', ppk:180,   wr:[1.00,12.0],  base:4,    icon:'🦈' },
+  legendary: {label:'LEGENDARIS',   color:'#fbbf24', ppk:350,   wr:[3.00,25.0],  base:0.9,  icon:'🐋' },
+  mythic:    {label:'MISTIK',       color:'#f472b6', ppk:600,   wr:[8.00,60.0],  base:0.12, icon:'🐙' },
+  monster:   {label:'★ MONSTER ★', color:'#ff2d55', ppk:20000, wr:[50.0,400.0], base:0,    icon:'🐉' }
+};
+
+const RAW_SPECIES={
+common:["Ikan Teri","Ikan Kembung","Ikan Sardin","Ikan Tembang","Ikan Selar","Ikan Layang",
+"Ikan Nila","Ikan Mujair","Ikan Mas Kecil","Ikan Lele","Ikan Gabus","Ikan Sepat","Ikan Betok",
+"Ikan Wader","Ikan Tawes","Ikan Bawal Kecil","Ikan Kakap Kecil","Ikan Kerapu Kecil",
+"Ikan Baronang","Ikan Belanak","Ikan Bandeng","Ikan Haring","Ikan Makarel","Ikan Kepala Batu",
+"Ikan Kapas","Ikan Sembilang","Ikan Duri","Ikan Buntal Kecil","Sotong Kecil","Udang Kecil",
+"Udang Rebon","Kepiting Kecil","Rajungan Kecil","Kerang Hijau","Kerang Dara","Tiram","Remis",
+"Cumi-Cumi Kecil","Gurita Kecil","Bintang Laut","Bulu Babi","Teripang","Ubur-Ubur Kecil",
+"Ikan Kue","Ikan Pisang","Ikan Layur Kecil","Ikan Cakalang Kecil","Ikan Tongkol",
+"Ikan Tuna Kecil","Ikan Ekor Kuning","Ikan Julung-Julung","Ikan Teri Medan","Ikan Selar Hijau",
+"Ikan Kembung Lelaki","Ikan Banyar","Ikan Malong","Ikan Sembilang Kuning","Ikan Lidah",
+"Ikan Sebelah","Ikan Kurau","Ikan Senangin","Ikan Bawal Putih","Ikan Gulamah","Ikan Tigawaja",
+"Udang Windu Kecil","Udang Vaname","Udang Dogol","Kepiting Bakau Kecil","Kerang Bulu",
+"Kerang Simping","Kerang Mutiara","Landak Laut","Mentimun Laut","Siput Laut"],
+uncommon:["Ikan Kakap Merah","Ikan Kerapu Bintang","Ikan Bawal Hitam","Ikan Tenggiri",
+"Ikan Cakalang","Ikan Tuna Sirip Kuning","Ikan Marlin Kecil","Ikan Barakuda Kecil",
+"Ikan Hiu Karang","Ikan Pari Kecil","Ikan Mola Kecil","Ikan Napoleon Kecil","Ikan Kakatua",
+"Ikan Badut","Ikan Angel","Ikan Kupu-Kupu","Ikan Bendera","Ikan Dokter","Ikan Zebra",
+"Ikan Lionfish","Ikan Mandarin","Ikan Moorish","Ikan Trigger","Ikan Buntal Berduri",
+"Belut Moray","Belut Laut","Lobster Kecil","Udang Mantis","Kepiting Biru","Kepiting Batu",
+"Sotong","Cumi-Cumi","Ubur-Ubur Bulan","Anemon Laut","Kuda Laut","Ikan Pipefish",
+"Ikan Terbang","Ikan Layur","Ikan Todak Kecil","Ikan Gergaji Kecil","Ikan Kapal Kecil",
+"Ikan Batu","Ikan Bibir Tebal","Ikan Ekor Merah","Ikan Kerapu Lumpur","Ikan Kerapu Kertang",
+"Ikan Kakap Putih Kecil","Ikan Jenaha","Ikan Lencam","Ikan Alu-Alu","Ikan Pare-Pare",
+"Ikan Kembung Perempuan","Ikan Lemuru","Ikan Tembang Besar","Ikan Selar Kuning",
+"Ikan Selar Bentong","Ikan Kuwe","Ikan Bobara","Ikan Bubara","Ikan Talang","Ikan Sunglir",
+"Ikan Cipa-Cipa","Ikan Ketang-Ketang","Ikan Beronang Lingkis","Ikan Siganus","Ikan Belanak Besar",
+"Ikan Umpan","Ikan Teri Jengki","Ikan Julung Sungkur","Ikan Hiu Kucing","Ikan Pari Pedang"],
+rare:["Ikan Tuna Sirip Biru","Ikan Marlin","Ikan Todak","Ikan Barakuda Raksasa",
+"Ikan Hiu Macan","Ikan Hiu Martil","Ikan Hiu Biru","Ikan Pari Manta Kecil","Ikan Pari Elang",
+"Ikan Napoleon","Ikan Kakatua Raksasa","Ikan Kerapu Raksasa","Ikan Kakap Putih Besar",
+"Belut Moray Raksasa","Gurita Merah","Gurita Raksasa Kecil","Cumi-Cumi Raksasa Kecil",
+"Lobster","King Crab Kecil","Ubur-Ubur Kotak","Kuda Laut Emas","Ikan Coelacanth Kecil",
+"Ikan Sturgeon","Ikan Arapaima Kecil","Ikan Belut Listrik Kecil","Ikan Lele Raksasa Kecil",
+"Ikan Hiu Greenland","Ikan Oarfish Kecil","Ikan Chimaera Kecil","Ikan Hiu Berjalan",
+"Ikan Naga Laut Daun","Ikan Hiu Zebra","Ikan Kerapu Titik","Ikan Pari Listrik",
+"Ikan Hiu Sirip Putih","Ikan Kakap Batu","Ikan Tongkol Besar","Ikan Cakalang Besar",
+"Ikan Madidihang","Ikan Tuna Mata Besar","Ikan Tuna Albakora","Ikan Setuhuk Hitam",
+"Ikan Setuhuk Biru","Ikan Setuhuk Putih","Ikan Layaran","Ikan Cucut","Ikan Hiu Sirip Hitam",
+"Ikan Hiu Karang Abu","Ikan Pari Kemejan","Ikan Pari Burung","Ikan Pari Kekeh",
+"Ikan Hiu Paus Kecil","Ikan Hiu Tutul","Ikan Hiu Taji","Ikan Hiu Lemon","Ikan HiuBambu"],
+epic:["Ikan Oarfish","Ikan Coelacanth","Ikan Hiu Putih Besar","Ikan Manta Raksasa",
+"Ikan Paruh Raksasa","Cumi-Cumi Raksasa","Gurita Raksasa","King Crab","Lobster Raksasa",
+"Ikan Chimaera","Ikan Viperfish","Ikan Anglerfish","Ikan Gulper Eel","Vampire Squid",
+"Dumbo Octopus","Ikan Blobfish","Ikan Hiu Goblin","Ikan Hiu Megamouth","Ikan Naga Laut",
+"Ikan Coelacanth Raksasa","Ikan Sturgeon Raksasa","Ikan Arapaima","Ikan Belut Listrik Raksasa",
+"Ikan Hiu Putih Albino","Ikan Paus Sperma Kecil","Narwhal Kecil","Ikan Hiu Banteng",
+"Ikan Hiu Malas","Ikan Hiu Tembak","Ikan Hiu Api","Ikan Hiu Perak","Ikan Hiu Perunggu",
+"Ikan Hiu Paus Remaja","Ikan Pari Manta Hitam","Ikan Pari Manta Biru","Ikan Hiu Martil Raksasa",
+"Ikan Hiu Macan Pasir","Ikan Hiu Macan Tutul","Ikan Hiu Bignose","Ikan Hiu Berjumbai",
+"Ikan Hiu Kerdil","Ikan Hiu Greenland Raksasa","Ikan Hiu Lentera","Ikan Hiu Berduri",
+"Ikan Hiu Kucing Raksasa","Ikan Sepat Siam Raksasa","Ikan Belida","Ikan Arwana Emas",
+"Ikan Arwana Merah","Ikan Arwana Perak","Ikan Arwana Jardini","Ikan Arwana Golden Red",
+"Ikan Buntal Raksasa","Ikan Mola-Mola","Ikan Hiu Salmon","Ikan Hiu Lemon Raksasa"],
+legendary:["Kraken Muda","Leviathan Muda","Naga Laut Perak","Megalodon Muda",
+"Ikan Paus Raksasa","Ikan Moby Dick","Hydra Laut","Ikan Siren","Ikan Putri Duyung",
+"Ikan Poseidon","Cthulhu Muda","Ular Abyss","Penjaga Palung","Ikan Paus Hantu",
+"Ikan Bulan","Ikan Matahari","Ikan Kristal","Koi Emas Raksasa","Ikan Naga Api",
+"Ikan Phoenix","Ikan Petir","Ular Badai","Ikan Pari Langit","Ikan Kekosongan Kecil",
+"Ikan Gerbang","Ikan Aurora","Ikan Hiu Hantu","Ikan Paus Biru","Ikan Paus Bungkuk",
+"Ikan Paus Sei","Ikan Paus Bryde","Ikan Paus Sperma Raksasa","Ikan Paus Orca",
+"Ikan Paus Narwhal","Ikan Paus Beluga","Ikan Hiu Greenland Purba","Ikan Coelacanth Purba",
+"Ikan Ular Laut Raksasa","Ikan Oarfish Raksasa","Ikan Mola-Mola Raksasa","Ikan Ubur-Ubur Raksasa",
+"Ikan Siput Laut Raksasa","Ikan Kerang Raksasa","Ikan Kepiting Raksasa","Ikan Lobster Purba",
+"Ikan Kalajengking Laut","Ikan Trilobite","Ikan Anomalocaris","Ikan Dunkleosteus",
+"Ikan Megalodon Remaja","Ikan Livyatan","Ikan Basilosaurus","Ikan Mosasaurus Kecil",
+"Ikan Plesiosaurus","Ikan Ikan Purba","Ikan Coelacanth Emas"],
+mythic:["Kraken","Leviathan","Megalodon","Cthulhu","Naga Laut Purba","Titan Palung",
+"Dewa Abyss","Ikan Bintang Jatuh","Ikan Kiamat","Ikan Waktu","Ikan Dimensi","Ikan Mimpi",
+"Ikan Kekosongan","Penjaga Gerbang","Ikan Naga Langit","Ikan Pencipta Ombak",
+"Ikan Naga Api","Ikan Naga Es","Ikan Naga Badai","Ikan Naga Petir","Ikan Naga Bayangan",
+"Ikan Naga Cahaya","Ikan Naga Kegelapan","Ikan Naga Kristal","Ikan Naga Baja","Ikan Naga Darah",
+"Ikan Naga Bulan","Ikan Naga Matahari","Ikan Naga Bintang","Ikan Naga Galaksi",
+"Ikan Naga Waktu","Ikan Naga Dimensi","Ikan Naga Mimpi","Ikan Naga Kekosongan",
+"Ikan Naga Gerbang","Ikan Naga Pencipta","Ikan Naga Ombak","Ikan Naga Abyss",
+"Ikan Naga Titan","Ikan Naga Dewa","Ikan Naga Purba","Ikan Naga Pertama","Ikan Naga Terakhir"],
+monster:["Kraken Purba","Leviathan Abyss","Megalodon Purba","Poseidon","Naga Laut Pertama",
+"Ikan Pencipta","Kaisar Laut","Sang Pemangsa","Tuhan Laut","Ikan Segala Zaman",
+"Ikan Kehancuran","Ikan Penghancur Dunia","Ikan Kiamat","Ikan Akhir Zaman"]
+};
+
+const PHASE_IDS=['pagi','siang','sore','malam','tengahmalam','dinihari'];
+const WEATHER_IDS=['cerah','berawan','gerimis','hujan','badai','berkabut','angin'];
+const SPECIES=[];
+
+for(const [rar,names] of Object.entries(RAW_SPECIES)){
+  const R=RARITY[rar];
+  for(const name of names){
+    const h=hash(name);
+    const minW=+(R.wr[0]*(0.7+((h>>>3)%50)/100)).toFixed(3);
+    let maxW=+(R.wr[1]*(0.7+((h>>>9)%70)/100)).toFixed(3);
+    if(maxW<=minW*1.4) maxW=+(minW*2.2).toFixed(3);
+    const times=PHASE_IDS.filter((p,i)=>((h>>>(i*3))&7)<3);
+    if(!times.length) times.push(PHASE_IDS[h%6]);
+    const wxs=WEATHER_IDS.filter((w,i)=>((h>>>(i*2+11))&7)<3);
+    if(!wxs.length) wxs.push(WEATHER_IDS[(h>>>5)%7]);
+    
+    let icon = R.icon;
+    if (rar === 'common' && name.includes('Udang')) icon = '🦐';
+    if (rar === 'common' && name.includes('Kepiting')) icon = '🦀';
+    if (rar === 'common' && name.includes('Kerang')) icon = '🐚';
+    if (rar === 'uncommon' && name.includes('Kuda')) icon = '🐎'; 
+    if (name.includes('Naga')) icon = '🐉';
+    if (name.includes('Paus')) icon = '🐋';
+    if (name.includes('Hiu')) icon = '🦈';
+    if (name.includes('Gurita')) icon = '🐙';
+    if (name.includes('Cumi')) icon = '🦑';
+    if (name.includes('Kepiting') || name.includes('Rajungan')) icon = '🦀';
+    if (name.includes('Udang') || name.includes('Lobster')) icon = '🦐';
+    if (name.includes('Ubur')) icon = '🪼';
+    if (name.includes('Bintang')) icon = '⭐';
+
+    SPECIES.push({name,rarity:rar,minW,maxW,times,wxs,icon});
+  }
+}
+
+const RODS=[
+  {name:'Joran Kayu',     color:'#8B5A2B', accent:'#4e2f13', luck:0,   price:0,       upgBase:120,    maxLvl:5, lvlLuck:2},
+  {name:'Joran Bambu',    color:'#CDB44A', accent:'#6f8a2e', luck:6,   price:450,     upgBase:380,    maxLvl:5, lvlLuck:3},
+  {name:'Joran Fiber',    color:'#2E86DE', accent:'#17497f', luck:14,  price:1800,    upgBase:1400,   maxLvl:5, lvlLuck:4},
+  {name:'Joran Karbon',   color:'#33343d', accent:'#6a6c78', luck:24,  price:6500,    upgBase:5200,   maxLvl:6, lvlLuck:5},
+  {name:'Joran Titanium', color:'#b8c4d0', accent:'#7a8794', luck:38,  price:22000,   upgBase:17000,  maxLvl:6, lvlLuck:6},
+  {name:'Joran Mithril',  color:'#7fe3d4', accent:'#2f8f84', luck:55,  price:70000,   upgBase:54000,  maxLvl:7, lvlLuck:8},
+  {name:'Joran Kristal',  color:'#b98bff', accent:'#6b3fbf', luck:78,  price:220000,  upgBase:170000, maxLvl:7, lvlLuck:10},
+  {name:'Joran Naga',     color:'#ff6b3d', accent:'#b32d0f', luck:110, price:700000,  upgBase:540000, maxLvl:8, lvlLuck:13},
+  {name:'Joran Kosmik',   color:'#ff4fd8', accent:'#6a1fb0', luck:160, price:2000000, upgBase:1500000,maxLvl:10,lvlLuck:18}
+];
+
+const BAITS=[
+  {name:'Cacing',        color:'#c08457', luck:0,  price:4,    upgBase:60,     maxLvl:5, lvlLuck:1},
+  {name:'Udang Kecil',   color:'#ff9a8b', luck:5,  price:12,   upgBase:180,    maxLvl:5, lvlLuck:1.5},
+  {name:'Ikan Kecil',    color:'#9fd3ff', luck:10, price:35,   upgBase:520,    maxLvl:5, lvlLuck:2},
+  {name:'Cumi-Cumi',     color:'#e0b3ff', luck:17, price:90,   upgBase:1350,   maxLvl:6, lvlLuck:3},
+  {name:'Umpan Emas',    color:'#ffd76b', luck:28, price:260,  upgBase:3900,   maxLvl:6, lvlLuck:4},
+  {name:'Umpan Kristal', color:'#8be9ff', luck:42, price:700,  upgBase:10500,  maxLvl:7, lvlLuck:6},
+  {name:'Umpan Legenda', color:'#ff9de0', luck:62, price:2000, upgBase:30000,  maxLvl:7, lvlLuck:8},
+  {name:'Umpan Abyss',   color:'#b07bff', luck:92, price:5500, upgBase:82000,  maxLvl:8, lvlLuck:11}
+];
+
+const BOATS=[
+  {name:'Perahu Kayu Kecil', maxDur:100,  price:0},
+  {name:'Sampan',            maxDur:180,  price:900},
+  {name:'Perahu Layar',      maxDur:300,  price:4000},
+  {name:'Kapal Nelayan',     maxDur:480,  price:14000},
+  {name:'Kapal Penjelajah',  maxDur:760,  price:46000},
+  {name:'Kapal Legenda',     maxDur:1200, price:170000}
+];
+
+const PHASES=[
+  {id:'pagi',        name:'Pagi Hari',    luck:+6,  desc:'Sinar pagi membuat ikan aktif mencari makan'},
+  {id:'siang',       name:'Siang Hari',   luck:-3,  desc:'Terik matahari membuat ikan bersembunyi di dasar'},
+  {id:'sore',        name:'Sore Hari',    luck:+3,  desc:'Ikan mulai memangsa sebelum malam tiba'},
+  {id:'malam',       name:'Malam Hari',   luck:+9,  desc:'Predator malam mulai berburu di permukaan'},
+  {id:'tengahmalam', name:'Tengah Malam', luck:+14, desc:'Makhluk misterius naik dari palung laut'},
+  {id:'dinihari',    name:'Dini Hari',    luck:+2,  desc:'Kabut tipis menyelimuti laut yang hening'}
+];
+function getPhaseIdx(h){
+  h=((h%24)+24)%24;
+  if(h>=5&&h<9) return 0;
+  if(h>=9&&h<15) return 1;
+  if(h>=15&&h<18) return 2;
+  if(h>=18&&h<21) return 3;
+  if(h>=21&&h<24) return 4;
+  return 5;
+}
+
+const WEATHERS={
+  cerah:   {name:'Cerah',         icon:'☀️', luck:+6,  w:26, desc:'Langit biru dan air tenang'},
+  berawan: {name:'Berawan',       icon:'⛅', luck:+1,  w:22, desc:'Awan tipis melintas pelan'},
+  gerimis: {name:'Gerimis',       icon:'🌦️', luck:-3,  w:16, desc:'Hujan rintik-rintik membasahi laut'},
+  hujan:   {name:'Hujan Deras',   icon:'🌧️', luck:-9,  w:12, desc:'Hujan deras, air bergejolak'},
+  badai:   {name:'Hujan Badai',   icon:'⛈️', luck:-18, w:6,  desc:'Badai mengamuk, ombak meninggi'},
+  berkabut:{name:'Berkabut',      icon:'🌫️', luck:-6,  w:10, desc:'Kabut tebal menutupi pandangan'},
+  angin:   {name:'Angin Kencang', icon:'💨', luck:-4,  w:8,  desc:'Angin kencang mengacak permukaan'}
+};
+
+const SKY_KEYS=[
+  {h:0,  top:[4,6,20],     bot:[14,22,52],   seaFar:[10,20,48],  seaNear:[4,8,22]},
+  {h:5,  top:[36,44,86],   bot:[226,140,100],seaFar:[36,66,104], seaNear:[14,28,54]},
+  {h:7,  top:[86,158,220], bot:[196,228,246],seaFar:[56,130,180],seaNear:[20,62,110]},
+  {h:12, top:[58,146,224], bot:[172,222,255],seaFar:[46,132,190],seaNear:[14,58,106]},
+  {h:16, top:[92,152,214], bot:[255,196,140],seaFar:[52,124,172],seaNear:[18,54,96]},
+  {h:18, top:[58,48,108],  bot:[240,132,92], seaFar:[38,64,110], seaNear:[14,24,54]},
+  {h:20, top:[14,16,50],   bot:[64,48,86],   seaFar:[20,32,68],  seaNear:[6,12,32]},
+  {h:24, top:[4,6,20],     bot:[14,22,52],   seaFar:[10,20,48],  seaNear:[4,8,22]}
+];
+function getSky(h){
+  h=((h%24)+24)%24;
+  let a=SKY_KEYS[0],b=SKY_KEYS[SKY_KEYS.length-1];
+  for(let i=0;i<SKY_KEYS.length-1;i++){
+    if(h>=SKY_KEYS[i].h&&h<=SKY_KEYS[i+1].h){a=SKY_KEYS[i];b=SKY_KEYS[i+1];break;}
+  }
+  const t=(b.h-a.h)===0?0:(h-a.h)/(b.h-a.h);
+  return {
+    top:lerpC(a.top,b.top,t),
+    bot:lerpC(a.bot,b.bot,t),
+    seaFar:lerpC(a.seaFar,b.seaFar,t),
+    seaNear:lerpC(a.seaNear,b.seaNear,t)
+  };
+}
+function nightness(h){
+  h=((h%24)+24)%24;
+  if(h>=7&&h<=17) return 0;
+  if(h>=19||h<=5) return 1;
+  if(h>17&&h<19) return (h-17)/2;
+  return 1-(h-5)/2;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE & SAVE SYSTEM (PASSWORD)
+═══════════════════════════════════════════════════════════ */
+const HOUR_SEC=25; // 1 hari = 24 * 25 = 600 detik = 10 menit
+
+const defaultState = {
+  coins:100,
+  clock:6.0,
+  phase:0,
+  weather:'cerah',
+  weatherTimer:rand(35,60),
+  rod:0, rodLvl:0,
+  baitIdx:0,
+  baitQty:BAITS.map((b,i)=>i===0?10:0),
+  baitLvl:BAITS.map(()=>0),
+  boatLvl:0,
+  boatDur:100,
+  inv:[],
+  invMax:25,
+  album:{},
+  mode:'idle',
+  timer:0,
+  biteTime:0,
+  castT:0,
+  bobberX:0, bobberY:0,
+  ripples:[],
+  fishJump:[],
+  rodBend:0
+};
+
+let state = JSON.parse(JSON.stringify(defaultState));
+let username = "";
+let fight=null;
+let toastTimer=null;
+let uiOpen=false;
+let T=0;
+let currentShopTab='bait';
+let hudTimer = 0;
+
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  return h.toString(16);
+}
+
+function saveGame() {
+  if (!username) return;
+  try {
+    localStorage.setItem('nelayan_save_' + username, JSON.stringify(state));
+  } catch(e) { console.warn("Gagal save", e); }
+}
+
+function loadGame(name) {
+  username = name;
+  try {
+    const saved = localStorage.getItem('nelayan_save_' + username);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = Object.assign({}, defaultState, parsed);
+      if (!Array.isArray(state.baitQty)) state.baitQty = [...defaultState.baitQty];
+      if (!Array.isArray(state.baitLvl)) state.baitLvl = [...defaultState.baitLvl];
+      if (!Array.isArray(state.inv)) state.inv = [];
+      if (!state.album) state.album = {};
+    } else {
+      state = JSON.parse(JSON.stringify(defaultState));
+      saveGame();
+    }
+  } catch(e) {
+    state = JSON.parse(JSON.stringify(defaultState));
+  }
+}
+
+setInterval(saveGame, 15000);
+window.addEventListener('beforeunload', saveGame);
+
+/* ═══════════════════════════════════════════════════════════
+   CANVAS & RESIZE
+═══════════════════════════════════════════════════════════ */
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+let W=0,H=0,DPR=1;
+
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width=Math.round(W*DPR); 
+  canvas.height=Math.round(H*DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize);
+
+const STARS=Array.from({length:60},()=>({ // Reduce stars for perf
+  x:Math.random(), y:Math.random()*0.72, r:rand(0.5,1.5), tw:rand(0,Math.PI*2), sp:rand(0.6,2.2)
+}));
+const CLOUDS=Array.from({length:5},()=>({ // Reduce clouds
+  x:Math.random()*1.4-0.2, y:rand(0.05,0.32), s:rand(0.55,1.5), spd:rand(0.004,0.014), puffs:randInt(3,5)
+}));
+
+function rodLuck(){ return RODS[state.rod].luck+state.rodLvl*RODS[state.rod].lvlLuck; }
+function baitLuck(){ return BAITS[state.baitIdx].luck+state.baitLvl[state.baitIdx]*BAITS[state.baitIdx].lvlLuck; }
+function getLuck(){ return rodLuck()+baitLuck()+PHASES[state.phase].luck+WEATHERS[state.weather].luck+state.boatLvl*2; }
+
+/* ═══════════════════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════════════════ */
+const toastEl=document.getElementById('toast');
+function showToast(title,desc,eff,kind){
+  toastEl.querySelector('.t-title').textContent=title;
+  toastEl.querySelector('.t-desc').textContent=desc||'';
+  const e=toastEl.querySelector('.t-eff');
+  e.textContent=eff||'';
+  e.className='t-eff '+(kind||'neutral');
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toastEl.classList.remove('show'),3400);
+}
+
+function updateHUD(){
+  document.getElementById('pillCoins').innerHTML=`🪙 <b>${Math.floor(state.coins).toLocaleString('id-ID')}</b>`;
+  const ph=PHASES[state.phase];
+  const icon=['🌅','☀️','🌇','🌙','🌌','🌄'][state.phase];
+  document.getElementById('pillTime').innerHTML=`${icon} <b>${ph.name}</b>`;
+  const wx=WEATHERS[state.weather];
+  document.getElementById('pillWeather').innerHTML=`${wx.icon} <b>${wx.name}</b>`;
+  document.getElementById('pillRod').innerHTML=`🎣 <b>${RODS[state.rod].name}</b>`;
+  
+  const bq=state.baitQty[state.baitIdx]||0;
+  const bEl=document.getElementById('pillBait');
+  bEl.innerHTML=`${bq>0?'🪱':'❌'} <b>${BAITS[state.baitIdx].name} ×${bq}</b>`;
+  bEl.className='pill'+(bq<=0?' warn':'');
+  
+  const bd=Math.round(state.boatDur);
+  const btEl=document.getElementById('pillBoat');
+  btEl.innerHTML=`⛵ <b>${bd}%</b>`;
+  btEl.className='pill'+(bd<=0?' warn':'');
+
+  const castBtn=document.getElementById('btnCast');
+  if(state.mode==='bite'){castBtn.textContent='❗ TARIK!';castBtn.classList.add('reel');castBtn.disabled=false;}
+  else if(state.mode==='fight'){castBtn.textContent='⏱️ STOP';castBtn.classList.add('reel');castBtn.disabled=false;}
+  else if(state.mode==='idle'){castBtn.textContent='🎣 Cast';castBtn.classList.remove('reel');castBtn.disabled=false;}
+  else {castBtn.textContent='...';castBtn.classList.remove('reel');castBtn.disabled=true;}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SPAWN LOGIC & GRADE SYSTEM
+═══════════════════════════════════════════════════════════ */
+function rollRarity(luck){
+  const lm=1+luck/100;
+  if(Math.random()<1e-9*lm) return 'monster';
+  const w={
+    common:    100/Math.pow(lm,0.7),
+    uncommon:  40*Math.pow(lm,0.6),
+    rare:      14*Math.pow(lm,1.0),
+    epic:      4*Math.pow(lm,1.4),
+    legendary: 0.9*Math.pow(lm,1.8),
+    mythic:    0.12*Math.pow(lm,2.2)
+  };
+  let total=0; for(const k in w) total+=w[k];
+  let r=Math.random()*total;
+  for(const k in w){ r-=w[k]; if(r<=0) return k; }
+  return 'common';
+}
+function pickSpecies(rarity,phaseId,weather){
+  const list=SPECIES.filter(s=>s.rarity===rarity);
+  if(!list.length) return SPECIES[0];
+  const ws=[]; let total=0;
+  for(const s of list){
+    let w=1;
+    if(s.times.includes(phaseId)) w*=2.5;
+    if(s.wxs.includes(weather)) w*=1.6;
+    ws.push(w); total+=w;
+  }
+  let r=Math.random()*total;
+  for(let i=0;i<list.length;i++){ r-=ws[i]; if(r<=0) return list[i]; }
+  return list[list.length-1];
+}
+
+function computeCatch(){
+  const luck=getLuck();
+  const phaseId=PHASES[state.phase].id;
+  const rarity=rollRarity(luck);
+  const sp=pickSpecies(rarity,phaseId,state.weather);
+  const R=RARITY[rarity];
+  const t=Math.pow(Math.random(),1.8);
+  let w=sp.minW+(sp.maxW-sp.minW)*t;
+  w=Math.round(w*1000)/1000;
+  
+  // SISTEM GRADE BARU
+  const n = (w - sp.minW) / Math.max(0.0001, (sp.maxW - sp.minW));
+  let grade = 'F', gm = 1.0;
+  
+  if (rarity === 'common') {
+    if (n < 0.4) { grade = 'F'; gm = 1.0; }
+    else if (n < 0.7) { grade = 'E'; gm = 1.1; }
+    else { grade = 'D'; gm = 1.25; }
+  } else if (rarity === 'uncommon') {
+    if (n < 0.4) { grade = 'D'; gm = 1.3; }
+    else if (n < 0.7) { grade = 'C'; gm = 1.5; }
+    else { grade = 'B'; gm = 1.8; }
+  } else if (rarity === 'rare') {
+    if (n < 0.4) { grade = 'C'; gm = 1.6; }
+    else if (n < 0.7) { grade = 'B'; gm = 2.0; }
+    else { grade = 'A'; gm = 2.5; }
+  } else if (rarity === 'epic') {
+    if (n < 0.4) { grade = 'B'; gm = 2.2; }
+    else if (n < 0.7) { grade = 'A'; gm = 2.8; }
+    else { grade = 'S'; gm = 3.5; }
+  } else if (rarity === 'legendary') {
+    if (n < 0.4) { grade = 'A'; gm = 3.0; }
+    else if (n < 0.7) { grade = 'S'; gm = 4.0; }
+    else { grade = 'SS'; gm = 5.5; }
+  } else if (rarity === 'mythic') {
+    if (n < 0.4) { grade = 'S'; gm = 4.5; }
+    else if (n < 0.7) { grade = 'SS'; gm = 6.0; }
+    else { grade = 'SSS'; gm = 8.0; }
+  } else { // monster
+    grade = 'SSS'; gm = 10.0;
+  }
+  
+  const price=Math.max(1,Math.round(R.ppk*w*gm));
+  return {name:sp.name,rarity,weight:w,grade,price,icon:sp.icon};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FISHING FLOW
+═══════════════════════════════════════════════════════════ */
+function startCast(){
+  if(state.mode!=='idle'||uiOpen) return;
+  if(state.boatDur<=0){
+    showToast('Perahu Rusak!','Durabilitas perahu habis.','Perbaiki di Toko','bad');
+    beep(200, 0.2, 'sawtooth', 0.05);
+    return;
+  }
+  if((state.baitQty[state.baitIdx]||0)<=0){
+    const alt=state.baitQty.findIndex(q=>q>0);
+    if(alt>=0){ state.baitIdx=alt; }
+    else{
+      showToast('Umpan Habis!','Beli umpan dulu di Toko.','','bad');
+      beep(200, 0.2, 'sawtooth', 0.05);
+      return;
+    }
+  }
+  state.baitQty[state.baitIdx]--;
+  state.mode='casting';
+  state.castT=0;
+  state.timer=0.85;
+  beep(440,0.1,'sine',0.04);
+  updateHUD();
+}
+
+function hookFish(){
+  if(state.mode!=='bite') return;
+  state.mode='fight';
+  const luck=getLuck();
+  const zoneW=clamp(0.20+luck*0.0009+state.boatLvl*0.014,0.13,0.46);
+  
+  fight={
+    pos:Math.random(),
+    dir:Math.random()<0.5?1:-1,
+    speed:rand(0.35,0.6),
+    zoneCenter:rand(0.2,0.8),
+    zoneW
+  };
+  beep(600,0.1,'triangle',0.05);
+  updateHUD();
+}
+
+function resolveFight(){
+  if(state.mode!=='fight'||!fight) return;
+  const inZone=Math.abs(fight.pos-fight.zoneCenter)<=fight.zoneW/2;
+  const perfect=Math.abs(fight.pos-fight.zoneCenter)<=fight.zoneW/6;
+  state.mode='idle';
+  fight=null;
+
+  const wx=state.weather;
+  if(wx==='badai') state.boatDur=Math.max(0,state.boatDur-3);
+  else if(wx==='hujan') state.boatDur=Math.max(0,state.boatDur-1.2);
+  else if(wx==='gerimis') state.boatDur=Math.max(0,state.boatDur-0.4);
+
+  if(!inZone){
+    beep(150,0.2,'sawtooth',0.06);
+    showToast('Kabur!','Ikan berhasil melepaskan diri.','Umpan terbuang','bad');
+    updateHUD(); saveGame();
+    return;
+  }
+
+  if(state.inv.length>=state.invMax){
+    beep(180,0.2,'sawtooth',0.06);
+    showToast('Tas Penuh!','Ikan tidak bisa ditampung.','Upgrade slot tas di Toko','bad');
+    updateHUD(); saveGame();
+    return;
+  }
+
+  const c=computeCatch();
+  if(perfect) c.price=Math.round(c.price*1.25);
+  state.inv.push(c);
+  
+  if(!state.album[c.name]) state.album[c.name] = 0;
+  state.album[c.name]++;
+
+  beep(523.25,0.1,'sine',0.06);
+  setTimeout(()=>beep(659.25,0.15,'sine',0.06),100);
+  showResult(c,perfect);
+  updateHUD();
+  saveGame();
+}
+
+const resultEl=document.getElementById('result');
+let resultTimer=null;
+function showResult(c,perfect){
+  const R=RARITY[c.rarity];
+  resultEl.querySelector('.r-rar').textContent=R.label+(perfect?' · PERFECT!':'');
+  resultEl.querySelector('.r-rar').style.color=R.color;
+  resultEl.querySelector('.r-name').textContent=c.icon + ' ' + c.name;
+  resultEl.querySelector('.r-stats').innerHTML=
+    `⚖️ <b>${c.weight.toFixed(2)} Kg</b> &nbsp;·&nbsp; Grade <b>${c.grade}</b>`;
+  resultEl.querySelector('.r-price').textContent='💰 '+c.price.toLocaleString('id-ID')+' coin';
+  resultEl.classList.add('show');
+  clearTimeout(resultTimer);
+  resultTimer=setTimeout(()=>resultEl.classList.remove('show'),2200);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UPDATE LOOP (OPTIMIZED)
+═══════════════════════════════════════════════════════════ */
+function update(dt){
+  T+=dt;
+  state.clock+=dt/HOUR_SEC;
+  if(state.clock>=24) state.clock-=24;
+
+  const ph=getPhaseIdx(state.clock);
+  if(ph!==state.phase){
+    state.phase=ph;
+    const P=PHASES[ph];
+    showToast(P.name,P.desc,`Luck ${P.luck>=0?'+':''}${P.luck}%`,P.luck>=0?'good':'bad');
+    beep(440,0.15,'triangle',0.04);
+  }
+
+  state.weatherTimer-=dt;
+  if(state.weatherTimer<=0){
+    state.weatherTimer=rand(38,85);
+    const pool=Object.keys(WEATHERS).filter(k=>k!==state.weather);
+    let total=0; for(const k of pool) total+=WEATHERS[k].w;
+    let r=Math.random()*total, pick=pool[0];
+    for(const k of pool){ r-=WEATHERS[k].w; if(r<=0){pick=k;break;} }
+    state.weather=pick;
+    const WX=WEATHERS[pick];
+    showToast(WX.icon+' '+WX.name,WX.desc,`Luck ${WX.luck>=0?'+':''}${WX.luck}%`,WX.luck>=0?'good':'bad');
+    beep(330,0.15,'sine',0.04);
+  }
+
+  if(state.mode==='casting'){
+    state.castT+=dt;
+    if(state.castT>=0.85){ state.mode='waiting'; state.timer=rand(1.6,5.2); }
+  }
+  else if(state.mode==='waiting'){
+    state.timer-=dt;
+    if(state.timer<=0){
+      state.mode='bite';
+      state.biteTime=1.75;
+      beep(800,0.1,'sine',0.06);
+      setTimeout(()=>beep(900,0.1,'sine',0.05),110);
+    }
+  }
+  else if(state.mode==='bite'){
+    state.biteTime-=dt;
+    if(state.biteTime<=0){
+      state.mode='idle';
+      showToast('Terlambat!','Ikan kabur sebelum dikail.','Umpan terbuang','bad');
+      beep(220,0.2,'sine',0.05);
+      updateHUD();
+    }
+  }
+  else if(state.mode==='fight'&&fight){
+    fight.pos+=fight.dir*fight.speed*dt;
+    if(fight.pos>1){ fight.pos=1; fight.dir=-1; }
+    if(fight.pos<0){ fight.pos=0; fight.dir=1; }
+  }
+
+  const targetBend=state.mode==='bite'?1:(state.mode==='fight'?0.55:0);
+  state.rodBend=lerp(state.rodBend,targetBend,dt*8);
+
+  // RIPPLES & FISHJUMPS OPTIMIZATION
+  for(let i=state.ripples.length-1;i>=0;i--){
+    const rp=state.ripples[i];
+    rp.t+=dt;
+    if(rp.t>rp.life) state.ripples.splice(i,1);
+  }
+  if(state.mode==='waiting'&&Math.random()<dt*1.6){
+    const bx=W*0.16+250*clamp(H/700,0.62,1.5);
+    state.ripples.push({x:bx+rand(-14,14),y:H*0.62+rand(-3,3),t:0,life:1.6,r:rand(6,16)});
+  }
+
+  if(Math.random()<dt*0.15){ // Reduced fish jump spawn rate
+    state.fishJump.push({
+      x:rand(W*0.35,W*0.92), y:H*rand(0.5,0.66),
+      t:0, life:1.1, dir:Math.random()<0.5?1:-1, s:rand(0.7,1.3)
+    });
+  }
+  for(let i=state.fishJump.length-1;i>=0;i--){
+    const fj=state.fishJump[i]; fj.t+=dt;
+    if(fj.t>fj.life) state.fishJump.splice(i,1);
+  }
+
+  // THROTTLE HUD UPDATE (Optimasi performa)
+  hudTimer += dt;
+  if (hudTimer > 0.2) {
+    updateHUD();
+    hudTimer = 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER (GRAPHICS OPTIMIZED)
+═══════════════════════════════════════════════════════════ */
+function drawSky(){
+  const hz=H*0.42;
+  const sky=getSky(state.clock);
+  const night=nightness(state.clock);
+  const wx=state.weather;
+  const stormy=(wx==='hujan'||wx==='badai')?1:(wx==='gerimis'?0.45:0);
+  const foggy=wx==='berkabut'?1:0;
+
+  let top=sky.top.slice(), bot=sky.bot.slice();
+  if(stormy>0){
+    const damp=1-stormy*0.42;
+    top=top.map(v=>v*damp+18*stormy);
+    bot=bot.map(v=>v*damp+26*stormy);
+  }
+  if(foggy>0){
+    top=top.map(v=>lerp(v,150,foggy*0.45));
+    bot=bot.map(v=>lerp(v,170,foggy*0.5));
+  }
+
+  const g=ctx.createLinearGradient(0,0,0,hz);
+  g.addColorStop(0,rgb(top));
+  g.addColorStop(1,rgb(bot));
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W,hz+2);
+
+  if(night>0.02){
+    ctx.save();
+    for(const s of STARS){
+      const tw=0.55+0.45*Math.sin(T*s.sp+s.tw);
+      ctx.globalAlpha=night*tw*0.9;
+      ctx.fillStyle='#fff';
+      ctx.beginPath();
+      ctx.arc(s.x*W,s.y*hz,s.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawCelestial(){
+  const hz=H*0.42;
+  const h=state.clock;
+  const wx=state.weather;
+  const dim=(wx==='hujan'||wx==='badai')?0.25:(wx==='gerimis'?0.55:(wx==='berkabut'?0.4:1));
+
+  const isSun=(h>=5&&h<19);
+  const t=isSun ? (h-5)/14 : (((h+5)%24)/10);
+  const ang=Math.PI*t;
+  const x=W*0.5-Math.cos(ang)*W*0.42;
+  const y=hz-Math.sin(ang)*hz*0.86;
+
+  ctx.save();
+  ctx.globalAlpha=dim;
+  if(isSun){
+    const glow=ctx.createRadialGradient(x,y,0,x,y,H*0.28);
+    glow.addColorStop(0,'rgba(255,240,160,0.7)');
+    glow.addColorStop(0.35,'rgba(255,190,100,0.25)');
+    glow.addColorStop(1,'rgba(255,160,60,0)');
+    ctx.fillStyle=glow;
+    ctx.beginPath(); ctx.arc(x,y,H*0.28,0,Math.PI*2); ctx.fill();
+
+    ctx.fillStyle='#fffbe6';
+    ctx.beginPath(); ctx.arc(x,y,H*0.045,0,Math.PI*2); ctx.fill();
+  }else{
+    const glow=ctx.createRadialGradient(x,y,0,x,y,H*0.24);
+    glow.addColorStop(0,'rgba(190,220,255,0.4)');
+    glow.addColorStop(1,'rgba(140,180,255,0)');
+    ctx.fillStyle=glow;
+    ctx.beginPath(); ctx.arc(x,y,H*0.24,0,Math.PI*2); ctx.fill();
+
+    ctx.fillStyle='#f0f4ff';
+    ctx.beginPath(); ctx.arc(x,y,H*0.036,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(200,215,255,0.7)';
+    ctx.beginPath(); ctx.arc(x-H*0.010,y-H*0.008,H*0.008,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+H*0.012,y+H*0.006,H*0.006,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+H*0.004,y-H*0.014,H*0.005,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawClouds(){
+  const hz=H*0.42;
+  const wx=state.weather;
+  const stormy=(wx==='hujan'||wx==='badai');
+  const night=nightness(state.clock);
+
+  for(const c of CLOUDS){
+    c.x+=c.spd*0.016;
+    if(c.x>1.35) c.x=-0.35;
+    const cx=c.x*W, cy=c.y*hz;
+    const s=c.s*Math.min(W,H)/900*1.35;
+    const alpha=stormy?0.85:(0.35+night*0.25);
+
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=stormy?'#4a5468':(night>0.4?'#3a4568':'#ffffff');
+    for(let i=0;i<c.puffs;i++){
+      const px=cx+(i-c.puffs/2)*46*s;
+      const py=cy+Math.sin(i*2.1)*8*s;
+      const pr=(30+Math.sin(i*1.7)*10)*s;
+      ctx.beginPath();
+      ctx.arc(px,py,pr,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawSea(){
+  const hz=H*0.42;
+  const sky=getSky(state.clock);
+  const night=nightness(state.clock);
+  const wx=state.weather;
+  const stormy=(wx==='badai')?1:((wx==='hujan')?0.55:((wx==='gerimis')?0.25:0));
+
+  const far=sky.seaFar.map(v=>v*1.15);
+  const near=sky.seaNear.map(v=>v*1.2);
+  
+  if(stormy>0){
+    for(let i=0;i<3;i++){
+      far[i]=lerp(far[i],far[i]*0.6+12,stormy);
+      near[i]=lerp(near[i],near[i]*0.6+8,stormy);
+    }
+  }
+
+  const g=ctx.createLinearGradient(0,hz,0,H);
+  g.addColorStop(0,rgb(far));
+  g.addColorStop(0.45,rgb(lerpC(far,near,0.55)));
+  g.addColorStop(1,rgb(near));
+  ctx.fillStyle=g;
+  ctx.fillRect(0,hz,W,H-hz);
+
+  ctx.save();
+  ctx.globalAlpha=0.35+night*0.2;
+  ctx.fillStyle=rgb(lerpC(sky.seaFar,[20,40,50],0.55));
+  ctx.beginPath();
+  ctx.moveTo(W*0.62,hz);
+  ctx.quadraticCurveTo(W*0.70,hz-H*0.055,W*0.77,hz);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(W*0.80,hz);
+  ctx.quadraticCurveTo(W*0.855,hz-H*0.038,W*0.91,hz);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // Reduce waves from 18 to 10 for performance
+  const ampMul=1+stormy*2.4;
+  for(let i=1;i<=10;i++){
+    const p=i/10;
+    const y=hz+Math.pow(p,1.75)*(H-hz);
+    const amp=(1+p*7)*ampMul;
+    const spd=0.5+p*1.4;
+    ctx.beginPath();
+    for(let x=0;x<=W+14;x+=16){ // Step x by 16 instead of 14
+      const yy=y+Math.sin(x*0.013+T*spd+i*0.8)*amp
+               +Math.sin(x*0.031-T*spd*0.7+i*1.9)*amp*0.45;
+      if(x===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+    }
+    ctx.strokeStyle=`rgba(255,255,255,${0.04+p*0.1})`;
+    ctx.lineWidth=1+p*2.2;
+    ctx.stroke();
+  }
+
+  const h=state.clock;
+  const isSun=(h>=5&&h<19);
+  const gt=isSun?(h-5)/14:(((h+5)%24)/10);
+  const gx=W*0.5-Math.cos(Math.PI*gt)*W*0.42;
+  ctx.save();
+  ctx.globalAlpha=(1-stormy*0.8)*0.65;
+  for(let i=0;i<15;i++){ // Reduce glitters
+    const p=i/15;
+    const y=hz+Math.pow(p,1.4)*(H-hz)*0.82;
+    const spread=(20+p*W*0.16);
+    const x=gx+Math.sin(T*1.6+i*2.3)*spread;
+    const a=(0.5+0.5*Math.sin(T*3+i))*0.5;
+    ctx.fillStyle=isSun?`rgba(255,245,180,${a*0.8})`:`rgba(200,225,255,${a*0.6})`;
+    ctx.beginPath();
+    ctx.ellipse(x,y,2+p*8,1+p*2,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function sceneGeom(){
+  const isPortrait = H > W;
+  const sc = isPortrait ? clamp(W/550, 0.45, 0.9) : clamp(Math.min(H/700,W/1250),0.55,1.45);
+  const waterY=H*0.62;
+  const bob=Math.sin(T*1.5)*2.6*sc+Math.sin(T*2.7+1.1)*1.2*sc;
+  const bx = isPortrait ? W*0.25 : W*0.16;
+  const by=waterY+bob;
+  return {sc,waterY,bx,by,isPortrait};
+}
+
+function drawScene(){
+  const {sc,waterY,bx,by}=sceneGeom();
+
+  ctx.save();
+  ctx.globalAlpha=0.3;
+  ctx.fillStyle='#01050a';
+  ctx.beginPath();
+  ctx.ellipse(bx,by+22*sc,85*sc,14*sc,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  const hullG=ctx.createLinearGradient(bx-80*sc,by-24*sc,bx+80*sc,by+34*sc);
+  hullG.addColorStop(0,'#5c3a1e');
+  hullG.addColorStop(0.4,'#8c582a');
+  hullG.addColorStop(0.7,'#6e401c');
+  hullG.addColorStop(1,'#3b210d');
+
+  ctx.beginPath();
+  ctx.moveTo(bx-78*sc,by-14*sc);
+  ctx.quadraticCurveTo(bx-75*sc,by+30*sc,bx,by+34*sc);
+  ctx.quadraticCurveTo(bx+75*sc,by+30*sc,bx+78*sc,by-14*sc);
+  ctx.closePath();
+  ctx.fillStyle=hullG;
+  ctx.fill();
+  ctx.strokeStyle='rgba(25,12,4,0.8)';
+  ctx.lineWidth=2*sc;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(bx-78*sc,by-14*sc);
+  ctx.quadraticCurveTo(bx-75*sc,by+30*sc,bx,by+34*sc);
+  ctx.quadraticCurveTo(bx+75*sc,by+30*sc,bx+78*sc,by-14*sc);
+  ctx.closePath();
+  ctx.clip();
+  ctx.strokeStyle='rgba(40,20,5,0.4)';
+  ctx.lineWidth=1.5*sc;
+  for(let i=1;i<=4;i++){
+    const yy=by-14*sc+i*12*sc;
+    ctx.beginPath();
+    ctx.moveTo(bx-80*sc,yy);
+    ctx.quadraticCurveTo(bx,yy+7*sc,bx+80*sc,yy);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const rimG=ctx.createLinearGradient(bx-78*sc,by-24*sc,bx+78*sc,by-10*sc);
+  rimG.addColorStop(0,'#a8703a');
+  rimG.addColorStop(0.5,'#e3b06b');
+  rimG.addColorStop(1,'#8b5c2a');
+  ctx.beginPath();
+  ctx.ellipse(bx,by-14*sc,78*sc,10*sc,0,0,Math.PI*2);
+  ctx.fillStyle=rimG;
+  ctx.fill();
+  ctx.strokeStyle='rgba(30,15,5,0.8)';
+  ctx.lineWidth=2*sc;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(bx,by-14*sc,70*sc,7*sc,0,0,Math.PI*2);
+  ctx.fillStyle='#4a2e14';
+  ctx.fill();
+
+  const lanternX = bx + 75*sc;
+  const lanternY = by - 16*sc;
+  ctx.beginPath();
+  ctx.moveTo(lanternX, lanternY);
+  ctx.lineTo(lanternX, lanternY - 18*sc);
+  ctx.strokeStyle='#2d1b0e';
+  ctx.lineWidth=2*sc;
+  ctx.stroke();
+  ctx.fillStyle='#ffdd55';
+  ctx.beginPath();
+  ctx.arc(lanternX, lanternY - 22*sc, 5*sc, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='#b8873a';
+  ctx.lineWidth=1*sc;
+  ctx.stroke();
+  const glow = ctx.createRadialGradient(lanternX, lanternY - 22*sc, 0, lanternX, lanternY - 22*sc, 25*sc);
+  glow.addColorStop(0, 'rgba(255,220,100,0.6)');
+  glow.addColorStop(1, 'rgba(255,220,100,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(lanternX, lanternY - 22*sc, 25*sc, 0, Math.PI*2);
+  ctx.fill();
+
+  drawCharacter(sc,bx,by);
+  drawRod(sc,bx,by);
+}
+
+function drawCharacter(sc,bx,by){
+  const cx=bx-6*sc;
+  const hipY=by-16*sc;
+  const shoulderY=hipY-42*sc;
+  const headR=12*sc;
+  const headY=shoulderY-15*sc;
+
+  ctx.save();
+
+  const vestG=ctx.createLinearGradient(cx-18*sc,shoulderY,cx+18*sc,hipY);
+  vestG.addColorStop(0,'#f97316');
+  vestG.addColorStop(0.5,'#ea580c');
+  vestG.addColorStop(1,'#9a3412');
+  ctx.beginPath();
+  ctx.moveTo(cx-16*sc,hipY+2*sc);
+  ctx.quadraticCurveTo(cx-20*sc,shoulderY+12*sc,cx-14*sc,shoulderY);
+  ctx.lineTo(cx+14*sc,shoulderY);
+  ctx.quadraticCurveTo(cx+20*sc,shoulderY+12*sc,cx+16*sc,hipY+2*sc);
+  ctx.closePath();
+  ctx.fillStyle=vestG;
+  ctx.fill();
+  
+  ctx.strokeStyle='#1f2937';
+  ctx.lineWidth=3*sc;
+  ctx.beginPath(); ctx.moveTo(cx-10*sc, shoulderY+2*sc); ctx.lineTo(cx-8*sc, hipY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+10*sc, shoulderY+2*sc); ctx.lineTo(cx+8*sc, hipY); ctx.stroke();
+
+  ctx.fillStyle='#d9a274';
+  ctx.fillRect(cx-5*sc,shoulderY-7*sc,10*sc,9*sc);
+
+  const skinG=ctx.createRadialGradient(cx+headR*0.35,headY-headR*0.35,headR*0.2, cx,headY,headR*1.25);
+  skinG.addColorStop(0,'#fcd3ab');
+  skinG.addColorStop(1,'#c48554');
+  ctx.beginPath();
+  ctx.arc(cx+1*sc,headY,headR,0,Math.PI*2);
+  ctx.fillStyle=skinG;
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,50,20,0.3)';
+  ctx.lineWidth=1*sc;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx+1*sc,headY-2*sc,headR*1.01,Math.PI*1.06,Math.PI*1.98);
+  ctx.fillStyle='#1a110b';
+  ctx.fill();
+
+  ctx.beginPath(); ctx.arc(cx+7*sc,headY+0.5*sc,1.5*sc,0,Math.PI*2); ctx.fillStyle='#1a1a1a'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+8*sc,headY+3*sc,2*sc,0,Math.PI); ctx.fillStyle='#8b4513'; ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(cx-headR, headY-headR*0.4);
+  ctx.lineTo(cx+headR, headY-headR*0.4);
+  ctx.lineTo(cx+headR*1.2, headY-headR*0.1);
+  ctx.lineTo(cx-headR*1.2, headY-headR*0.1);
+  ctx.closePath();
+  ctx.fillStyle='#dc2626';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx-headR*1.1, headY-headR*0.25, 2.5*sc, 0, Math.PI*2);
+  ctx.fillStyle='#b91c1c';
+  ctx.fill();
+
+  const hatY=headY-headR*0.6;
+  ctx.beginPath();
+  ctx.ellipse(cx+1*sc,hatY,headR*1.85,headR*0.45,0,0,Math.PI*2);
+  const hatG=ctx.createLinearGradient(cx-headR,hatY,cx+headR,hatY);
+  hatG.addColorStop(0,'#d4a34a');
+  hatG.addColorStop(0.5,'#f5d58a');
+  hatG.addColorStop(1,'#b8873a');
+  ctx.fillStyle=hatG;
+  ctx.fill();
+  ctx.strokeStyle='rgba(120,85,30,0.7)';
+  ctx.lineWidth=1.2*sc;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(cx+1*sc,hatY-headR*0.3,headR*0.8,headR*0.55,0,Math.PI,Math.PI*2);
+  ctx.fillStyle=hatG;
+  ctx.fill();
+  ctx.strokeStyle='rgba(120,85,30,0.7)';
+  ctx.stroke();
+
+  const handX=cx+34*sc;
+  const handY=shoulderY+16*sc;
+  ctx.beginPath();
+  ctx.moveTo(cx+11*sc,shoulderY+6*sc);
+  ctx.quadraticCurveTo(cx+26*sc,shoulderY+7*sc,handX,handY);
+  ctx.strokeStyle='#d9a274';
+  ctx.lineWidth=7.5*sc;
+  ctx.lineCap='round';
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(handX,handY,4.6*sc,0,Math.PI*2);
+  ctx.fillStyle='#e8b48c';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function rodGeometry(sc,bx,by){
+  const cx=bx-6*sc;
+  const shoulderY=by-16*sc-42*sc;
+  const handX=cx+34*sc;
+  const handY=shoulderY+16*sc;
+
+  const len=118*sc;
+  const baseAng=-0.62;
+  const bend=state.rodBend;
+  const ang=baseAng+bend*0.20;
+
+  const tipX=handX+len*Math.cos(ang);
+  const tipY=handY+len*Math.sin(ang)+bend*10*sc;
+
+  return {handX,handY,tipX,tipY,ang,len};
+}
+
+function drawRod(sc,bx,by){
+  const rod=RODS[state.rod];
+  const {handX,handY,tipX,tipY}=rodGeometry(sc,bx,by);
+
+  ctx.save();
+  ctx.lineCap='round';
+
+  const dx=tipX-handX, dy=tipY-handY;
+  const L=Math.hypot(dx,dy);
+  const nx=-dy/L, ny=dx/L;
+  const wBase=5.2*sc, wTip=1.0*sc;
+
+  ctx.beginPath();
+  ctx.moveTo(handX+nx*wBase,handY+ny*wBase);
+  ctx.lineTo(tipX+nx*wTip,tipY+ny*wTip);
+  ctx.lineTo(tipX-nx*wTip,tipY-ny*wTip);
+  ctx.lineTo(handX-nx*wBase,handY-ny*wBase);
+  ctx.closePath();
+  const rg=ctx.createLinearGradient(handX,handY,tipX,tipY);
+  rg.addColorStop(0,rod.accent);
+  rg.addColorStop(0.3,rod.color);
+  rg.addColorStop(1,rod.accent);
+  ctx.fillStyle=rg;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(handX+nx*wBase*0.4,handY+ny*wBase*0.4);
+  ctx.lineTo(tipX+nx*wTip*0.4,tipY+ny*wTip*0.4);
+  ctx.strokeStyle='rgba(255,255,255,0.4)';
+  ctx.lineWidth=1.2*sc;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(handX,handY);
+  ctx.lineTo(handX-dx/L*20*sc,handY-dy/L*20*sc);
+  ctx.strokeStyle='#2d1b0e';
+  ctx.lineWidth=7*sc;
+  ctx.stroke();
+
+  const rlx=handX+dx/L*16*sc, rly=handY+dy/L*16*sc;
+  ctx.beginPath();
+  ctx.arc(rlx,rly,5*sc,0,Math.PI*2);
+  ctx.fillStyle='#c9c9d4';
+  ctx.fill();
+  ctx.strokeStyle='#4a4a58';
+  ctx.lineWidth=1.5*sc;
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(rlx,rly,2*sc,0,Math.PI*2);
+  ctx.fillStyle='#2d1b0e';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(tipX,tipY,2.2*sc,0,Math.PI*2);
+  ctx.fillStyle=rod.color;
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawLineAndBobber(){
+  if(state.mode==='idle') return;
+
+  const {sc,waterY,bx,by,isPortrait}=sceneGeom();
+  const {tipX,tipY}=rodGeometry(sc,bx,by);
+
+  let bobX = isPortrait ? bx + 150*sc : bx+250*sc;
+  let bobY=waterY-2*sc;
+  bobX=Math.min(bobX,W-46);
+
+  if(state.mode==='casting'){
+    const p=clamp(state.castT/0.85,0,1);
+    const e=1-Math.pow(1-p,3);
+    bobX=lerp(tipX,bobX,e);
+    bobY=lerp(tipY,bobY,e)-Math.sin(p*Math.PI)*95*sc;
+  }else{
+    bobY=waterY-2*sc+Math.sin(T*2.2)*2.2*sc;
+    if(state.mode==='bite') bobY+=Math.sin(T*26)*4*sc;
+  }
+  state.bobberX=bobX; state.bobberY=bobY;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tipX,tipY);
+  const midX=(tipX+bobX)/2;
+  const midY=(tipY+bobY)/2+26*sc;
+  ctx.quadraticCurveTo(midX,midY,bobX,bobY);
+  ctx.strokeStyle='rgba(230,245,255,0.85)';
+  ctx.lineWidth=1.5*sc;
+  ctx.stroke();
+  ctx.restore();
+
+  for(const rp of state.ripples){
+    const p=rp.t/rp.life;
+    ctx.beginPath();
+    ctx.ellipse(rp.x,rp.y,rp.r*(1+p*1.6),rp.r*(1+p*1.6)*0.35,0,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(200,240,255,${(1-p)*0.5})`;
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(bobX,bobY+3*sc,5*sc,2*sc,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(bobX,bobY-2*sc,5.2*sc,0,Math.PI,true);
+  ctx.fillStyle='#ef4444';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(bobX,bobY-2*sc,5.2*sc,0,Math.PI,false);
+  ctx.fillStyle='#f8fafc';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(bobX,bobY-2*sc,5.2*sc,0,Math.PI*2);
+  ctx.strokeStyle='rgba(15,23,42,0.7)';
+  ctx.lineWidth=1*sc;
+  ctx.stroke();
+  ctx.restore();
+
+  if(state.mode==='bite'){
+    const p=1-state.biteTime/1.75;
+    const bounce=Math.abs(Math.sin(T*9))*12*sc;
+    ctx.save();
+    ctx.globalAlpha=0.95;
+    ctx.font=`800 ${36*sc}px system-ui,sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillStyle='#fbbf24';
+    ctx.strokeStyle='rgba(0,0,0,0.8)';
+    ctx.lineWidth=6*sc;
+    const yy=bobY-52*sc-bounce;
+    ctx.strokeText('!',bobX,yy);
+    ctx.fillText('!',bobX,yy);
+
+    ctx.beginPath();
+    ctx.arc(bobX,yy-45*sc,10*sc,-Math.PI/2,-Math.PI/2+(1-p)*Math.PI*2);
+    ctx.strokeStyle='rgba(251,191,36,0.95)';
+    ctx.lineWidth=3*sc;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+const rainDrops=[];
+function drawWeather(){
+  const wx=state.weather;
+  const intensity = wx==='badai'?1:(wx==='hujan'?0.65:(wx==='gerimis'?0.28:0));
+
+  if(intensity>0){
+    const target=intensity*150; // Reduced rain count
+    while(rainDrops.length<target){
+      rainDrops.push({
+        x:Math.random()*W*1.2, y:Math.random()*H,
+        v:rand(500,900)*(0.6+intensity*0.7),
+        l:rand(10,26)*(0.7+intensity*0.6),
+        a:rand(0.25,0.7)
+      });
+    }
+    while(rainDrops.length>target) rainDrops.pop();
+
+    ctx.save();
+    ctx.strokeStyle='rgba(180,215,255,0.7)';
+    ctx.lineWidth=1.3;
+    const slant=intensity*0.35;
+    for(const d of rainDrops){
+      d.y+=d.v*0.016;
+      d.x+=d.v*0.016*slant;
+      if(d.y>H){ d.y=-20; d.x=Math.random()*W*1.2; }
+      if(d.x>W+20) d.x=-20;
+      ctx.globalAlpha=d.a;
+      ctx.beginPath();
+      ctx.moveTo(d.x,d.y);
+      ctx.lineTo(d.x-d.l*slant,d.y-d.l);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if(wx==='berkabut'){
+    ctx.save();
+    ctx.globalAlpha=0.3;
+    const fg=ctx.createLinearGradient(0,H*0.35,0,H);
+    fg.addColorStop(0,'rgba(220,235,245,0.1)');
+    fg.addColorStop(0.5,'rgba(220,235,245,0.6)');
+    fg.addColorStop(1,'rgba(200,215,235,0.25)');
+    ctx.fillStyle=fg;
+    ctx.fillRect(0,H*0.35,W,H*0.65);
+    ctx.restore();
+  }
+
+  if(wx==='badai'){
+    ctx.save();
+    ctx.globalAlpha=0.2;
+    ctx.fillStyle='#0a0f1e';
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
+  }
+}
+
+function drawFishJumps(){
+  for(const fj of state.fishJump){
+    const p=fj.t/fj.life;
+    const arc=Math.sin(p*Math.PI);
+    const x=fj.x+fj.dir*p*70*fj.s;
+    const y=fj.y-arc*50*fj.s;
+    const rot=fj.dir*(p*1.6-0.8);
+
+    ctx.save();
+    ctx.globalAlpha=(1-p)*0.9;
+    ctx.translate(x,y);
+    ctx.rotate(rot);
+    ctx.scale(fj.s,fj.s);
+    ctx.beginPath();
+    ctx.ellipse(0,0,12,5,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(160,220,255,0.95)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-11,0);
+    ctx.lineTo(-20,-7);
+    ctx.lineTo(-20,7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    if(p<0.2||p>0.85){
+      ctx.save();
+      ctx.globalAlpha=(p<0.2?(p/0.2):((1-p)/0.15))*0.6;
+      ctx.strokeStyle='rgba(220,250,255,0.9)';
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.ellipse(fj.x,fj.y+4,18*fj.s*(1+arc*0.5),5*fj.s*(1+arc*0.5),0,0,Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+function drawFight(){
+  if(state.mode!=='fight'||!fight) return;
+
+  const pw=Math.min(W*0.85,640);
+  const ph=Math.min(110,H*0.24);
+  const px=(W-pw)/2;
+  const py=H-ph-28;
+
+  ctx.save();
+
+  rr(ctx,px,py,pw,ph,16);
+  const pg=ctx.createLinearGradient(px,py,px,py+ph);
+  pg.addColorStop(0,'rgba(15,25,45,0.95)');
+  pg.addColorStop(1,'rgba(8,12,24,0.98)');
+  ctx.fillStyle=pg;
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,200,255,0.5)';
+  ctx.lineWidth=1.8;
+  ctx.stroke();
+
+  ctx.font='800 11px system-ui,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(150,190,240,0.95)';
+  ctx.fillText('TEKAN UNTUK BERHENTI DI ZONA HIJAU',W/2,py+18);
+
+  const tx=px+20, tw=pw-40;
+  const ty=py+ph*0.6;
+  const th=Math.max(16,ph*0.24);
+
+  rr(ctx,tx,ty-th/2,tw,th,th/2);
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.fill();
+  ctx.strokeStyle='rgba(120,180,255,0.3)';
+  ctx.lineWidth=1.2;
+  ctx.stroke();
+
+  const zw=fight.zoneW*tw;
+  const zx=tx+fight.zoneCenter*tw-zw/2;
+  const zg=ctx.createLinearGradient(zx,ty,zx+zw,ty);
+  zg.addColorStop(0,'rgba(74,222,128,0.6)');
+  zg.addColorStop(0.5,'rgba(134,239,172,0.9)');
+  zg.addColorStop(1,'rgba(74,222,128,0.6)');
+  rr(ctx,zx,ty-th/2,zw,th,th/2);
+  ctx.fillStyle=zg;
+  ctx.fill();
+
+  const cw=zw/3;
+  rr(ctx,zx+cw,ty-th/2,cw,th,th/2);
+  ctx.fillStyle='rgba(253,224,71,0.4)';
+  ctx.fill();
+
+  const mx=tx+fight.pos*tw;
+  ctx.beginPath();
+  ctx.moveTo(mx,ty-th/2-4);
+  ctx.lineTo(mx-6,ty-th/2-14);
+  ctx.lineTo(mx+6,ty-th/2-14);
+  ctx.closePath();
+  ctx.fillStyle='#fbbf24';
+  ctx.fill();
+
+  rr(ctx,mx-2,ty-th/2-2,4,th+4,2);
+  ctx.fillStyle='#fef3c7';
+  ctx.fill();
+
+  ctx.fillStyle='rgba(150,190,240,0.4)';
+  ctx.beginPath(); ctx.arc(tx,ty,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(tx+tw,ty,4,0,Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawVignette(){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35,W/2,H/2,Math.max(W,H)*0.78);
+  g.addColorStop(0,'rgba(0,0,0,0)');
+  g.addColorStop(1,'rgba(0,0,0,0.45)');
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W,H);
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawSky();
+  drawCelestial();
+  drawClouds();
+  drawSea();
+  drawFishJumps();
+  drawScene();
+  drawLineAndBobber();
+  drawWeather();
+  drawVignette();
+  drawFight();
+}
+
+let lastT=performance.now();
+function loop(now){
+  let dt=(now-lastT)/1000;
+  lastT=now;
+  dt=Math.min(dt,0.05);
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UI / SHOP / ALBUM LOGIC
+═══════════════════════════════════════════════════════════ */
+function fmt(n){ return Math.floor(n).toLocaleString('id-ID'); }
+
+window.switchShopTab = function(tab) {
+  currentShopTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tabs = document.querySelectorAll('.tab');
+  const tabNames = ['bait', 'rod', 'boat', 'bag', 'sell'];
+  const idx = tabNames.indexOf(tab);
+  if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+  renderShop();
+  beep(600, 0.05, 'sine', 0.05);
+};
+
+function renderShop(){
+  const body=document.getElementById('shopBody');
+  let h='';
+  
+  if (currentShopTab === 'bait') {
+    h+='<div class="grid">';
+    BAITS.forEach((b,i)=>{
+      const lvl=state.baitLvl[i];
+      const qty=state.baitQty[i]||0;
+      const luck=b.luck+lvl*b.lvlLuck;
+      const price=Math.round(b.price*(1+lvl*0.45));
+      const maxed=lvl>=b.maxLvl;
+      const upgCost=Math.round(b.upgBase*Math.pow(1.8,lvl));
+      const selected=state.baitIdx===i;
+      h+=`<div class="card" style="border-color:${selected?'rgba(120,220,255,.6)':'rgba(120,180,255,.15)'}">
+        <div class="c-top">
+          <span class="c-name" style="color:${b.color}">${selected?'▸ ':''}${b.name}</span>
+          <span class="tag" style="background:rgba(120,180,255,.15);color:#9fc4f0">Lv.${lvl}</span>
+        </div>
+        <div class="c-sub">Luck <b style="color:#4ade80">+${luck.toFixed(1)}%</b> · Stok: <b>${qty}</b><br>Harga: ${fmt(price)} coin/butir</div>
+        <div class="c-act">
+          <button class="mini buy" onclick="SHOP.buyBait(${i},1)">Beli ×1</button>
+          <button class="mini buy" onclick="SHOP.buyBait(${i},10)">×10</button>
+          <button class="mini" onclick="SHOP.upgBait(${i})" ${maxed?'disabled':''}>
+            ${maxed?'MAX':'Upg '+fmt(upgCost)}
+          </button>
+        </div>
+        <div class="c-act" style="margin-top:6px">
+          <button class="mini" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)" onclick="SHOP.selectBait(${i})" ${qty<=0?'disabled':''}>Gunakan Umpan</button>
+        </div>
+      </div>`;
+    });
+    h+='</div>';
+  } 
+  else if (currentShopTab === 'rod') {
+    h+='<div class="grid">';
+    RODS.forEach((r,i)=>{
+      const owned=i<=state.rod;
+      const current=i===state.rod;
+      const lvl=current?state.rodLvl:0;
+      const luck=r.luck+lvl*r.lvlLuck;
+      const upgCost=Math.round(r.upgBase*Math.pow(1.75,lvl));
+      const maxed=lvl>=r.maxLvl;
+      h+=`<div class="card" style="border-color:${current?'rgba(120,220,255,.6)':'rgba(120,180,255,.15)'}">
+        <div class="c-top">
+          <span class="c-name" style="color:${r.color};text-shadow:0 0 10px ${r.color}55">${r.name}</span>
+          <span class="tag" style="background:${r.color}22;color:${r.color}">Lv.${lvl}</span>
+        </div>
+        <div class="c-sub">Luck <b style="color:#4ade80">+${luck}%</b> · Max Lv.${r.maxLvl}</div>
+        <div class="c-act">`;
+      if(!owned){
+        h+=`<button class="mini buy" onclick="SHOP.buyRod(${i})" ${state.coins<r.price?'disabled':''}>
+              Beli ${fmt(r.price)}
+            </button>`;
+      }else if(current){
+        h+=`<button class="mini" onclick="SHOP.upgRod()" ${maxed||state.coins<upgCost?'disabled':''}>
+              ${maxed?'MAX LEVEL':'Upgrade '+fmt(upgCost)}
+            </button>`;
+      }else{
+        h+=`<button class="mini" onclick="SHOP.equipRod(${i})">Pakai</button>`;
+      }
+      h+='</div></div>';
+    });
+    h+='</div>';
+  }
+  else if (currentShopTab === 'boat') {
+    const boat=BOATS[state.boatLvl];
+    const nextBoat=BOATS[state.boatLvl+1];
+    const repairCost=Math.ceil((boat.maxDur-state.boatDur)*0.6);
+    h+='<div class="grid">';
+    h+=`<div class="card">
+      <div class="c-top"><span class="c-name">${boat.name}</span>
+        <span class="tag" style="background:rgba(120,220,255,.15);color:#8fd6ff">Lv.${state.boatLvl}</span></div>
+      <div class="c-sub">Durabilitas: <b>${Math.round(state.boatDur)}/${boat.maxDur}</b><br>
+        Bonus stabilitas: <b style="color:#4ade80">+${state.boatLvl*1.4}%</b> zona tangkap</div>
+      <div class="c-act">
+        <button class="mini buy" onclick="SHOP.repair()" ${repairCost<=0||state.coins<repairCost?'disabled':''}>
+          ${repairCost<=0?'Mulus':'Perbaiki '+fmt(repairCost)}
+        </button>
+      </div></div>`;
+
+    if(nextBoat){
+      h+=`<div class="card">
+        <div class="c-top"><span class="c-name">${nextBoat.name}</span>
+          <span class="tag" style="background:rgba(255,200,80,.15);color:#ffd76b">BARU</span></div>
+        <div class="c-sub">Durabilitas: <b>${nextBoat.maxDur}</b> (+${nextBoat.maxDur-boat.maxDur})<br>
+          Bonus stabilitas: <b style="color:#4ade80">+${(state.boatLvl+1)*1.4}%</b></div>
+        <div class="c-act">
+          <button class="mini buy" onclick="SHOP.buyBoat()" ${state.coins<nextBoat.price?'disabled':''}>
+            Beli ${fmt(nextBoat.price)}
+          </button>
+        </div></div>`;
+    }else{
+      h+='<div class="card"><div class="c-sub">Perahu sudah maksimal 🏆</div></div>';
+    }
+    h+='</div>';
+  }
+  else if (currentShopTab === 'bag') {
+    const slotCost=Math.round(800*Math.pow(1.75,(state.invMax-25)/4));
+    h+='<div class="grid">';
+    h+=`<div class="card">
+      <div class="c-top"><span class="c-name">Kapasitas Tas</span>
+        <span class="tag" style="background:rgba(120,180,255,.15);color:#9fc4f0">${state.inv.length}/${state.invMax}</span></div>
+      <div class="c-sub">Tambah 4 slot penyimpanan ikan.</div>
+      <div class="c-act">
+        <button class="mini buy" onclick="SHOP.upgBag()" ${state.coins<slotCost?'disabled':''}>
+          Upgrade ${fmt(slotCost)}
+        </button>
+      </div></div>`;
+    h+='</div>';
+  }
+  else if (currentShopTab === 'sell') {
+    if(state.inv.length===0){
+      h+='<div class="empty">Tas kosong — belum ada ikan yang bisa dijual.</div>';
+    }else{
+      const total=state.inv.reduce((a,b)=>a+b.price,0);
+      h+=`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px">
+        <div><div class="c-name">${state.inv.length} ikan siap dijual</div>
+        <div class="c-sub">Total nilai: <b style="color:#ffd76b">${fmt(total)} coin</b></div></div>
+        <button class="mini sell" style="flex:0 0 auto;padding:10px 16px;font-size:13px" onclick="SHOP.sellAll()">Jual Semua</button>
+      </div>`;
+    }
+  }
+
+  body.innerHTML=h;
+}
+
+function renderBag(){
+  const body=document.getElementById('bagBody');
+  if(state.inv.length===0){
+    body.innerHTML='<div class="empty">Tas masih kosong. Coba casting dulu! 🎣</div>';
+    return;
+  }
+  let h=`<div style="font-size:12px;color:#9fb4d4;margin-bottom:10px;font-weight:600">
+    Slot terpakai: <b>${state.inv.length}/${state.invMax}</b> &nbsp;·&nbsp;
+    Total nilai: <b style="color:#ffd76b">${fmt(state.inv.reduce((a,b)=>a+b.price,0))} coin</b>
+  </div><div class="grid">`;
+
+  state.inv.forEach((it,i)=>{
+    const R=RARITY[it.rarity];
+    h+=`<div class="card" style="border-color:${R.color}55">
+      <div class="c-top">
+        <span class="c-name">${it.icon} ${it.name}</span>
+        <span class="tag" style="background:${R.color}22;color:${R.color}">${R.label}</span>
+      </div>
+      <div class="c-sub">⚖️ <b>${it.weight.toFixed(2)} Kg</b> · Grade <b>${it.grade}</b><br>
+        Harga jual: <b style="color:#ffd76b">${fmt(it.price)}</b></div>
+      <div class="c-act">
+        <button class="mini sell" onclick="SHOP.sellOne(${i})">Jual</button>
+      </div>
+    </div>`;
+  });
+  h+='</div>';
+  body.innerHTML=h;
+}
+
+function renderAlbum() {
+  const body = document.getElementById('albumBody');
+  const stats = document.getElementById('albumStats');
+  
+  const totalCaught = Object.keys(state.album).length;
+  const totalSpecies = SPECIES.length;
+  stats.innerHTML = `Total Spesies Ditemukan: <b style="color:#4ade80;font-size:14px">${totalCaught}</b> / ${totalSpecies}`;
+  
+  const rarityOrder = ['monster','mythic','legendary','epic','rare','uncommon','common'];
+  const sortedSpecies = [...SPECIES].sort((a, b) => {
+    const rIdxA = rarityOrder.indexOf(a.rarity);
+    const rIdxB = rarityOrder.indexOf(b.rarity);
+    if (rIdxA !== rIdxB) return rIdxA - rIdxB;
+    return a.name.localeCompare(b.name);
+  });
+
+  let h = '';
+  sortedSpecies.forEach(sp => {
+    const count = state.album[sp.name] || 0;
+    const isUnlocked = count > 0;
+    const R = RARITY[sp.rarity];
+    
+    h += `<div class="album-card ${isUnlocked ? '' : 'locked'}" style="${isUnlocked ? `border-color:${R.color}44` : ''}">
+      <div class="a-icon">${isUnlocked ? sp.icon : '❓'}</div>
+      <div class="a-name" title="${sp.name}">${isUnlocked ? sp.name : '???'}</div>
+      <div class="a-count" style="color:${isUnlocked ? '#4ade80' : '#5f7391'}">
+        ${isUnlocked ? `x${count}` : 'Terkunci'}
+      </div>
+    </div>`;
+  });
+  
+  body.innerHTML = h;
+}
+
+window.SHOP={
+  buyBait(i,n){
+    const lvl=state.baitLvl[i];
+    const price=Math.round(BAITS[i].price*(1+lvl*0.45));
+    const cost=price*n;
+    if(state.coins<cost){ showToast('Coin Kurang','Butuh '+fmt(cost)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=cost;
+    state.baitQty[i]=(state.baitQty[i]||0)+n;
+    if((state.baitQty[state.baitIdx]||0)<=0) state.baitIdx=i;
+    beep(700,0.08,'sine',0.05);
+    renderShop(); updateHUD(); saveGame();
+  },
+  upgBait(i){
+    const b=BAITS[i], lvl=state.baitLvl[i];
+    if(lvl>=b.maxLvl) return;
+    const cost=Math.round(b.upgBase*Math.pow(1.8,lvl));
+    if(state.coins<cost){ showToast('Coin Kurang','Butuh '+fmt(cost)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=cost; state.baitLvl[i]++;
+    beep(800,0.1,'sine',0.06);
+    renderShop(); updateHUD(); saveGame();
+  },
+  selectBait(i){
+    if((state.baitQty[i]||0)<=0) return;
+    state.baitIdx=i;
+    beep(600,0.06,'sine',0.04);
+    renderShop(); updateHUD(); saveGame();
+  },
+  buyRod(i){
+    const r=RODS[i];
+    if(state.coins<r.price){ showToast('Coin Kurang','Butuh '+fmt(r.price)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=r.price;
+    state.rod=i; state.rodLvl=0;
+    beep(750,0.12,'triangle',0.06);
+    showToast('Joran Baru!',r.name,'Luck +'+r.luck+'%','good');
+    renderShop(); updateHUD(); saveGame();
+  },
+  equipRod(i){
+    if(i>state.rod) return;
+    state.rod=i; state.rodLvl=0;
+    beep(500,0.1,'sine',0.04);
+    renderShop(); updateHUD(); saveGame();
+  },
+  upgRod(){
+    const r=RODS[state.rod], lvl=state.rodLvl;
+    if(lvl>=r.maxLvl) return;
+    const cost=Math.round(r.upgBase*Math.pow(1.75,lvl));
+    if(state.coins<cost){ showToast('Coin Kurang','Butuh '+fmt(cost)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=cost; state.rodLvl++;
+    beep(850,0.1,'sine',0.06);
+    renderShop(); updateHUD(); saveGame();
+  },
+  buyBoat(){
+    const nb=BOATS[state.boatLvl+1];
+    if(!nb) return;
+    if(state.coins<nb.price){ showToast('Coin Kurang','Butuh '+fmt(nb.price)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=nb.price;
+    state.boatLvl++;
+    state.boatDur=nb.maxDur;
+    beep(500,0.16,'triangle',0.06);
+    showToast('Perahu Baru!',nb.name,'Durabilitas '+nb.maxDur,'good');
+    renderShop(); updateHUD(); saveGame();
+  },
+  repair(){
+    const boat=BOATS[state.boatLvl];
+    const cost=Math.ceil((boat.maxDur-state.boatDur)*0.6);
+    if(cost<=0) return;
+    if(state.coins<cost){ showToast('Coin Kurang','Butuh '+fmt(cost)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=cost;
+    state.boatDur=boat.maxDur;
+    beep(650,0.1,'sine',0.05);
+    renderShop(); updateHUD(); saveGame();
+  },
+  upgBag(){
+    const cost=Math.round(800*Math.pow(1.75,(state.invMax-25)/4));
+    if(state.coins<cost){ showToast('Coin Kurang','Butuh '+fmt(cost)+' coin','','bad'); beep(200, 0.2, 'sawtooth', 0.05); return; }
+    state.coins-=cost; state.invMax+=4;
+    beep(750,0.1,'sine',0.06);
+    renderShop(); updateHUD(); saveGame();
+  },
+  sellOne(i){
+    const it=state.inv[i];
+    if(!it) return;
+    state.coins+=it.price;
+    state.inv.splice(i,1);
+    beep(880,0.08,'sine',0.05);
+    renderBag(); updateHUD(); saveGame();
+  },
+  sellAll(){
+    if(!state.inv.length) return;
+    const total=state.inv.reduce((a,b)=>a+b.price,0);
+    state.coins+=total;
+    state.inv=[];
+    beep(700,0.1,'sine',0.06);
+    setTimeout(()=>beep(1050,0.15,'sine',0.05),100);
+    showToast('Terjual!','Semua ikan berhasil dijual.','+'+fmt(total)+' coin','good');
+    renderShop(); renderBag(); updateHUD(); saveGame();
+  }
+};
+
+function openModal(id){
+  document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  uiOpen=true;
+}
+function closeModals(){
+  document.querySelectorAll('.modal').forEach(m=>m.classList.add('hidden'));
+  uiOpen=false;
+  beep(400, 0.05, 'sine', 0.04);
+}
+document.querySelectorAll('[data-close]').forEach(b=>{
+  b.addEventListener('click',closeModals);
+});
+document.querySelectorAll('.modal').forEach(m=>{
+  if(m.id === 'loginModal' || m.id === 'tutorialModal') return; 
+  m.addEventListener('pointerdown',e=>{ if(e.target===m) closeModals(); });
+});
+
+document.getElementById('btnShop').addEventListener('click',()=>{
+  renderShop(); openModal('shopModal'); beep(600,0.05,'sine',0.04);
+});
+document.getElementById('btnBag').addEventListener('click',()=>{
+  renderBag(); openModal('bagModal'); beep(600,0.05,'sine',0.04);
+});
+document.getElementById('btnAlbum').addEventListener('click',()=>{
+  renderAlbum(); openModal('albumModal'); beep(600,0.05,'sine',0.04);
+});
+document.getElementById('btnSettings').addEventListener('click',()=>{
+  document.getElementById('setUsername').textContent = username;
+  document.getElementById('volBgm').value = bgmVol * 100;
+  document.getElementById('volSfx').value = sfxVol * 100;
+  openModal('settingsModal'); beep(600,0.05,'sine',0.04);
+});
+document.getElementById('btnCast').addEventListener('click',e=>{
+  e.stopPropagation(); doAction();
+});
+
+// Settings actions
+document.getElementById('volBgm').addEventListener('input', (e) => {
+  bgmVol = e.target.value / 100;
+  if (masterBgmGain) masterBgmGain.gain.value = bgmVol;
+});
+document.getElementById('volSfx').addEventListener('input', (e) => {
+  sfxVol = e.target.value / 100;
+  if (masterSfxGain) masterSfxGain.gain.value = sfxVol;
+  beep(600, 0.05, 'sine', 0.05); // preview sfx
+});
+document.getElementById('btnLogout').addEventListener('click', () => {
+  if (confirm("Keluar dari akun ini?")) {
+    saveGame();
+    localStorage.removeItem('nelayan_last_user');
+    location.reload();
+  }
+});
+
+function doAction(){
+  if(uiOpen) return;
+  if(state.mode==='idle') startCast();
+  else if(state.mode==='bite') hookFish();
+  else if(state.mode==='fight') resolveFight();
+}
+canvas.addEventListener('pointerdown',e=>{ e.preventDefault(); doAction(); });
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='Enter'){ e.preventDefault(); doAction(); }
+  if(e.code==='Escape'){ closeModals(); }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   STARTUP, LOGIN & TUTORIAL FLOW
+═══════════════════════════════════════════════════════════ */
+resize();
+requestAnimationFrame(loop);
+document.getElementById('loading').style.display = 'none';
+
+const lastUser = localStorage.getItem('nelayan_last_user');
+if (lastUser) {
+  loadGame(lastUser);
+  updateHUD();
+  setTimeout(()=>{
+    const P=PHASES[state.phase];
+    showToast('Selamat Datang Kembali!', 'Akun: ' + username, `Luck +${P.luck}%`, 'good');
+  }, 600);
+} else {
+  document.getElementById('loginModal').style.display = 'flex';
+}
+
+document.getElementById('btnLogin').addEventListener('click', () => {
+  const nameInput = document.getElementById('loginUser').value.trim();
+  const passInput = document.getElementById('loginPass').value.trim();
+  
+  if (!nameInput || !passInput) {
+    alert("Username dan Password tidak boleh kosong!");
+    return;
+  }
+  
+  // Hash password
+  const passHashed = simpleHash(passInput);
+  const authKey = 'nelayan_auth_' + nameInput;
+  const existingAuth = localStorage.getItem(authKey);
+  
+  if (existingAuth) {
+    // Login
+    if (existingAuth !== passHashed) {
+      alert("Password salah untuk akun ini!");
+      return;
+    }
+    localStorage.setItem('nelayan_last_user', nameInput);
+    loadGame(nameInput);
+  } else {
+    // Register baru
+    localStorage.setItem(authKey, passHashed);
+    localStorage.setItem('nelayan_last_user', nameInput);
+    loadGame(nameInput);
+    // Show tutorial for new account
+    setTimeout(()=> document.getElementById('tutorialModal').classList.remove('hidden'), 500);
+  }
+  
+  // Init Audio after interaction
+  initAudio();
+  
+  document.getElementById('loginModal').style.display = 'none';
+  updateHUD();
+  
+  if (existingAuth) {
+    setTimeout(()=>{
+      const P=PHASES[state.phase];
+      showToast('Selamat Datang!', 'Akun: ' + username, `Luck +${P.luck}%`, 'good');
+    }, 600);
+  }
+});
+
+document.getElementById('btnCloseTutorial').addEventListener('click', () => {
+  document.getElementById('tutorialModal').classList.add('hidden');
+  beep(800, 0.1, 'sine', 0.06);
+});
+
+// Support enter key di input login
+document.getElementById('loginPass').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('btnLogin').click();
+});
+
+})();
+</script>
+</body>
+</html>
